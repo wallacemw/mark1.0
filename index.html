@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>ASSETANA V23 — Cloud Intelligence Engine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+  <style>
+    :root {
+      --bg: #020b14;
+      --bg-glass: rgba(8, 30, 50, 0.7);
+      --bg2: #040f1c;
+      --bg2-glass: rgba(4, 15, 28, 0.6);
+      --bg3: #061525;
+      --panel: rgba(13, 40, 64, 0.5);
+      --panel-glass: rgba(13, 40, 64, 0.45);
+      --panel2: #0a2238;
+      --b1: rgba(255, 255, 255, 0.1);
+      --b2: rgba(255, 255, 255, 0.05);
+      --b3: #1a4060;
+      --green: #00ff88;
+      --g-soft: rgba(0, 255, 136, 0.15);
+      --red: #ff2d55;
+      --r-soft: rgba(255, 45, 85, 0.15);
+      --yellow: #ffd60a;
+      --blue: #0af0ff;
+      --b-soft: rgba(10, 240, 255, 0.15);
+      --orange: #ff8c00;
+      --purple: #b44fff;
+      --cyan: #00d4e8;
+      --t1: #ffffff;
+      --t2: rgba(255, 255, 255, 0.7);
+      --t3: rgba(255, 255, 255, 0.4);
+      --mono: 'Share Tech Mono', monospace;
+      --hud: 'Orbitron', sans-serif;
+      --body: 'Inter', sans-serif;
+      --glow-g: 0 0 15px rgba(0, 255, 136, 0.3), 0 0 30px rgba(0, 255, 136, 0.1);
+      --glow-r: 0 0 15px rgba(255, 45, 85, 0.3), 0 0 30px rgba(255, 45, 85, 0.1);
+      --glow-b: 0 0 15px rgba(10, 240, 255, 0.2), 0 0 30px rgba(10, 240, 255, 0.1);
+      --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+      --glass-blur: blur(16px);
+    }
+
+    *,*::before,*::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      /* cyberpunk_trading_bg.png — place this file in the repo root for the custom background */
+      background: var(--bg) url("cyberpunk_trading_bg.png") no-repeat center center fixed;
+      background-size: cover;
+      color: var(--t1); font-family: var(--body); font-size: 13px; line-height: 1.5;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.05), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.05), transparent 40%),
+        rgba(2, 11, 20, 0.6);
+    }
+
+    * { position: relative; z-index: 1; }
+
+    ::-webkit-scrollbar { width: 12px; height: 14px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.4); border-left: 1px solid rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 6px; border: 3px solid rgba(0,0,0,0.5); transition: background 0.2s; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    .tabs::-webkit-scrollbar { display: block; height: 10px; }
+    .sig-scores::-webkit-scrollbar { display: block; height: 12px; }
+
+    #proto-alert { position: fixed; inset: 0; z-index: 9999; background: #000000ee; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .alert-box { background: var(--panel); border: 1px solid var(--red); max-width: 500px; width: 100%; padding: 26px; }
+    .alert-box::before { content: ''; display: block; height: 2px; background: linear-gradient(90deg, transparent, var(--red), transparent); margin-bottom: 18px; }
+    .alert-title { font-family: var(--hud); font-size: 12px; color: var(--red); letter-spacing: 2px; margin-bottom: 12px; }
+    .alert-step { display: flex; gap: 10px; margin-bottom: 9px; align-items: flex-start; }
+    .alert-step-n { background: var(--g3); color: var(--green); border: 1px solid var(--green); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 2px; }
+    .alert-step-t { font-size: 11px; color: var(--t2); line-height: 1.8; }
+    .alert-step-t b { color: var(--t1); }
+    .alert-step-t a { color: var(--blue); text-decoration: none; }
+    .alert-btn { width: 100%; padding: 11px; background: var(--g3); border: 1px solid var(--green); color: var(--green); font-family: var(--mono); font-size: 10px; letter-spacing: 2px; cursor: pointer; margin-bottom: 7px; }
+    .alert-btn:hover { background: var(--green); color: var(--bg); }
+    .alert-btn.sec { background: transparent; border-color: var(--b2); color: var(--t3); font-size: 9px; }
+    .alert-btn.sec:hover { border-color: var(--yellow); color: var(--yellow); }
+
+    #app { display: grid; grid-template-columns: 268px 1fr; grid-template-rows: 56px 1fr 28px; grid-template-areas: "header header" "sidebar content" "footer footer"; height: 100vh; width: 100vw; overflow: hidden; }
+
+    #topbar { position: sticky; top: 0; z-index: 1000; grid-area: header; grid-column: 1 / -1; grid-row: 1; height: 56px; background: var(--bg2-glass); backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); display: grid; grid-template-columns: minmax(160px, 220px) 1fr minmax(260px, auto); grid-template-rows: 1fr; align-items: stretch; overflow: hidden; }
+
+    .brand { grid-column: 1; padding: 0 16px; display: flex; align-items: center; gap: 10px; border-right: var(--glass-border); background: linear-gradient(90deg, rgba(255,255,255,0.05), transparent); white-space: nowrap; overflow: hidden; }
+    .brand-name { font-family: var(--hud); font-size: 13px; font-weight: 900; color: var(--green); letter-spacing: 4px; text-shadow: var(--glow-g); white-space: nowrap; }
+    .brand-sub { font-size: 9px; color: var(--t3); letter-spacing: 2px; margin-top: 1px; white-space: nowrap; }
+
+    .tabs { grid-column: 2; display: flex; flex-wrap: nowrap; white-space: nowrap; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.25) transparent; }
+    .tabs::-webkit-scrollbar { display: block; height: 4px; }
+    .tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 2px; }
+    .tabs::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+    .tab { white-space: nowrap; flex-shrink: 0; padding: 0 13px; height: 100%; display: flex; align-items: center; gap: 5px; font-size: 9.5px; letter-spacing: 1px; color: var(--t3); cursor: pointer; border-right: 1px solid var(--b1); transition: .2s; user-select: none; }
+    .tab:hover { color: var(--t2); background: #ffffff03; }
+    .tab.on { color: var(--green); background: var(--panel); }
+    .tab.on::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+    .top-right { grid-column: 3; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-left: var(--glass-border); overflow: hidden; background: linear-gradient(270deg, rgba(255,255,255,0.03), transparent); }
+    .status-pill { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--t2); letter-spacing: 1px; }
+    .led { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .5s; }
+    .led-on { background: var(--green); box-shadow: var(--glow-g); animation: pulse 2s infinite; }
+    .led-off { background: var(--t3); }
+    .led-warn { background: var(--yellow); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.2 } }
+    #clock { font-size: 10px; color: var(--blue); letter-spacing: 2px; }
+
+    #main { display: contents; }
+
+    #sidebar { grid-area: sidebar; grid-column: 1; grid-row: 2; width: 268px; background: var(--bg2-glass); backdrop-filter: var(--glass-blur); border-right: var(--glass-border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding-top: 5px; min-height: 0; position: relative; z-index: 5; }
+
+    .sb-sec { border-bottom: 1px solid var(--b1); padding: 11px 12px; }
+    .sb-hdr { font-family: var(--hud); font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--t2); margin-bottom: 12px; display: flex; align-items: center; gap: 7px; text-transform: uppercase; }
+    .sb-hdr::before { content: ''; width: 3px; height: 3px; background: var(--blue); flex-shrink: 0; box-shadow: var(--glow-b); }
+    .lbl { font-family: var(--body); font-size: 10px; letter-spacing: 0.5px; color: var(--t2); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; font-weight: 400; }
+    .lbl a { color: var(--blue); text-decoration: none; font-size: 9px; }
+    .inp { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--t1); padding: 9px 12px; font-family: var(--mono); font-size: 11px; outline: none; transition: all 0.2s ease; appearance: none; }
+    .inp:focus { border-color: var(--green); box-shadow: 0 0 0 1px #00ff8822; }
+    .inp option,.inp optgroup { background: var(--bg3); color: var(--t1); }
+    .irow { margin-bottom: 7px; }
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+
+    .btn { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--t2); font-family: var(--hud); font-size: 9px; letter-spacing: 1px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); text-transform: uppercase; font-weight: 700; }
+    .btn:hover { border-color: var(--green); color: var(--green); background: var(--g3); }
+    .btn.prim { border-color: var(--green); color: var(--green); }
+    .btn.prim:hover { background: var(--green); color: var(--bg); box-shadow: var(--glow-g); }
+    .btn.dang { border-color: var(--red); color: var(--red); }
+    .btn.dang:hover { background: var(--red); color: var(--bg); }
+    .btn.info { border-color: var(--blue); color: var(--blue); }
+    .btn.warn { border-color: var(--yellow); color: var(--yellow); }
+    .btn.aut { background: var(--g3); border-color: var(--green); color: var(--green); animation: pulse 2s infinite; }
+    .btn.sm { padding: 4px 9px; font-size: 9px; width: auto; letter-spacing: 1px; }
+
+    .conn-box { background: var(--bg3); border: 1px solid var(--b1); padding: 8px 9px; margin-top: 7px; font-size: 8px; line-height: 2; }
+    .cb-row { display: flex; justify-content: space-between; }
+    .cb-k { color: var(--t3); }
+    .cb-v { font-family: var(--mono); color: var(--t1); }
+    .cb-v.g { color: var(--green); }
+    .cb-v.r { color: var(--red); }
+    .cb-v.y { color: var(--yellow); }
+
+    #proto-warn { display: none; background: var(--r3); border: 1px solid var(--red); padding: 7px 9px; font-size: 8px; line-height: 1.9; margin-bottom: 8px; color: var(--red); }
+    #proto-warn span { color: var(--t2); }
+    #proto-warn a { color: var(--blue); text-decoration: none; }
+
+    .regime-panel { background: var(--bg3); border: 1px solid var(--b1); padding: 8px; margin-top: 7px; }
+    .rp-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--b1); font-size: 10px; }
+    .rp-row:last-child { border: none; }
+    .rp-k { color: var(--t3); font-size: 10px; letter-spacing: 1px; }
+    .rp-v { font-family: var(--mono); font-weight: 700; color: var(--t1); }
+
+    #content { grid-area: content; grid-column: 2; grid-row: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+
+    .page { display: none; flex: 1; min-height: 0; min-width: 0; flex-direction: column; overflow: hidden; }
+    .page.on { display: flex; }
+
+    #statusbar { grid-area: footer; grid-column: 1 / -1; grid-row: 3; height: 28px; background: var(--bg2-glass); backdrop-filter: var(--glass-blur); border-top: var(--glass-border); display: flex; align-items: center; overflow: hidden; padding: 0 10px; z-index: 10; }
+    .sbi { padding: 0 11px; height: 100%; display: flex; align-items: center; gap: 4px; border-right: 1px solid var(--b1); font-size: 9px; letter-spacing: 1px; flex-shrink: 0; }
+    .sbi-k { color: var(--t3); }
+    .sbi-v { font-family: var(--mono); color: var(--t2); }
+    .sbi-v.ok { color: var(--green); }
+    .sbi-v.er { color: var(--red); }
+    .sbi-v.wn { color: var(--yellow); }
+
+    #pa { flex-direction: row; }
+    .pa-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    #chart-wrap { flex: 1; position: relative; background: var(--panel); border-bottom: 1px solid var(--b1); min-height: 0; }
+    #chart-canvas { display: block; }
+    .chart-ov { position: absolute; top: 9px; left: 11px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ohlc { font-family: var(--mono); font-size: 9px; display: flex; gap: 7px; }
+    .ohlc-l { color: var(--t3); margin-right: 2px; }
+    .reg-tag { font-family: var(--hud); font-size: 10px; letter-spacing: 2px; padding: 2px 8px; border: 1px solid; }
+    .reg-tag.TU { color: var(--green); border-color: var(--green); background: var(--g3); }
+    .reg-tag.TD { color: var(--red); border-color: var(--red); background: var(--r3); }
+    .reg-tag.RG { color: var(--yellow); border-color: var(--yellow); background: #1a1200; }
+    .reg-tag.VL { color: var(--orange); border-color: var(--orange); background: #1a0900; }
+    .reg-tag.LO { color: var(--t3); border-color: var(--t3); background: var(--bg3); }
+    .tf-btns { position: absolute; top: 9px; right: 11px; display: flex; gap: 3px; }
+    .tf-btn { padding: 2px 9px; font-size: 10px; letter-spacing: 1px; border: 1px solid var(--b1); color: var(--t3); cursor: pointer; background: var(--bg3); transition: .15s; }
+    .tf-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .tf-btn.on { border-color: var(--green); color: var(--green); background: var(--g3); }
+    .mtf-badge { position: absolute; bottom: 9px; right: 11px; display: flex; gap: 4px; align-items: center; }
+    .mtf-pill { font-size: 10px; padding: 2px 7px; border: 1px solid; letter-spacing: 1px; }
+    .mtf-pill.agree { color: var(--green); border-color: var(--green); background: var(--g3); }
+    .mtf-pill.conflict { color: var(--yellow); border-color: var(--yellow); background: #1a1200; }
+    .mtf-pill.off { color: var(--t3); border-color: var(--b1); background: var(--bg3); }
+
+    #ind-row { height: 74px; background: var(--bg2); border-bottom: 1px solid var(--b1); display: flex; flex-shrink: 0; }
+    .ind { flex: 1; border-right: 1px solid var(--b1); padding: 7px 9px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; min-width: 0; }
+    .ind:last-child { border-right: none; }
+    .ind-n { font-size: 9px; letter-spacing: 2px; color: var(--t3); }
+    .ind-v { font-family: var(--mono); font-size: 18px; font-weight: 700; line-height: 1.1; color: var(--t1); }
+    .ind-bar { height: 4px; background: rgba(255,255,255,0.05); overflow: hidden; margin-top: 4px; border-radius: 2px; }
+    .ind-fill { height: 100%; border-radius: 2px; transition: width .5s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px currentColor; }
+    .ind-sub { font-size: 10px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #sig-bar { height: 52px; background: var(--bg3); border-bottom: 1px solid var(--b1); display: flex; align-items: stretch; flex-shrink: 0; }
+    .sig-main { padding: 0 16px; display: flex; align-items: center; gap: 11px; border-right: 1px solid var(--b1); flex-shrink: 0; }
+    .sig-dir { font-family: var(--hud); font-size: 22px; font-weight: 900; letter-spacing: 3px; line-height: 1; transition: .3s; }
+    .sig-dir.CALL { color: var(--green); text-shadow: 0 0 15px rgba(0,255,136,0.6),0 0 30px rgba(0,255,136,0.2); }
+    .sig-dir.PUT { color: var(--red); text-shadow: 0 0 15px rgba(255,45,85,0.6),0 0 30px rgba(255,45,85,0.2); }
+    .sig-dir.WAIT { color: var(--t3); font-size: 14px; letter-spacing: 3px; }
+    .sig-meta { font-size: 10px; line-height: 2; color: var(--t3); }
+    .sig-meta b { color: var(--t2); }
+    .sig-scores { flex: 1; padding: 0 12px; display: flex; align-items: center; gap: 16px; overflow-x: auto; }
+    .sc { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; min-width: 72px; }
+    .sc-l { font-size: 9px; letter-spacing: 1.5px; color: var(--t3); }
+    .sc-bar { height: 3px; background: var(--bg); overflow: hidden; border-radius: 1px; }
+    .sc-fill { height: 100%; border-radius: 1px; transition: width .4s; }
+    .sc-v { font-size: 8px; color: var(--t2); }
+    .sig-btns { padding: 0 11px; display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+    .sig-btns .btn { width: auto; padding: 6px 13px; font-size: 8px; }
+
+    .pa-right { width: 256px; flex-shrink: 0; background: var(--bg2); border-left: 1px solid var(--b1); display: flex; flex-direction: column; }
+    .rp-hdr { font-family: var(--hud); font-size: 8px; font-weight: 700; letter-spacing: 2px; color: var(--t2); padding: 10px 12px; border-bottom: 1px solid var(--b2); display: flex; align-items: center; gap: 7px; text-transform: uppercase; }
+    .rp-hdr::before { content: ''; width: 3px; height: 3px; background: var(--blue); flex-shrink: 0; }
+    .tr-list { flex: 1; overflow-y: auto; }
+    .tr-item { padding: 6px 10px; border-bottom: 1px solid var(--b1); display: grid; grid-template-columns: auto 1fr auto; gap: 5px; align-items: center; transition: .1s; }
+    .tr-item:hover { background: rgba(255,255,255,0.05); }
+    .tr-dir { font-family: var(--hud); font-size: 11px; font-weight: 700; }
+    .tr-dir.C { color: var(--green); }
+    .tr-dir.P { color: var(--red); }
+    .tr-info { font-size: 10px; color: var(--t3); line-height: 1.8; }
+    .tr-pnl { font-size: 9px; font-weight: 700; text-align: right; }
+    .tr-pnl.pos { color: var(--green); }
+    .tr-pnl.neg { color: var(--red); }
+    @keyframes faderow { from { background: #00ff8818 } to { background: transparent } }
+    .tr-new { animation: faderow .8s ease; }
+    .ms-grid { padding: 8px; border-top: 1px solid var(--b1); display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .ms { background: var(--bg3); border: 1px solid var(--b1); padding: 7px 8px; }
+    .ms-v { font-family: var(--mono); font-size: 16px; font-weight: 700; line-height: 1; }
+    .ms-l { font-size: 9px; letter-spacing: 1px; color: var(--t3); margin-top: 3px; }
+
+    #pd { overflow-y: auto; }
+    .d4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--b1); flex-shrink: 0; }
+    .d-c { background: var(--panel-glass); backdrop-filter: var(--glass-blur); padding: 20px; border: var(--glass-border); }
+    .d-ct { font-family: var(--hud); font-size: 8.5px; font-weight: 700; letter-spacing: 1.5px; color: var(--t2); margin-bottom: 12px; display: flex; align-items: center; gap: 7px; text-transform: uppercase; }
+    .d-ct::before { content: ''; width: 3px; height: 3px; background: var(--green); flex-shrink: 0; }
+    .d-big { font-family: var(--hud); font-size: 28px; font-weight: 900; line-height: 1; letter-spacing: -1px; }
+    .d-sub { font-size: 8px; color: var(--t3); margin-top: 4px; }
+    .d-2 { display: grid; grid-template-columns: 1fr 285px; gap: 1px; background: var(--b1); flex: 1; min-height: 200px; }
+    .kv { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--b1); font-size: 8.5px; }
+    .kv-k { color: var(--t3); }
+    .kv-v { font-family: var(--mono); font-weight: 600; }
+    .kv-v.g { color: var(--green); }
+    .kv-v.r { color: var(--red); }
+    .kv-v.y { color: var(--yellow); }
+    .rb { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-family: var(--hud); font-size: 8px; letter-spacing: 2px; margin-bottom: 10px; }
+    .rb-A { background: var(--g3); color: var(--green); border: 1px solid var(--green); }
+    .rb-R { background: #1a1200; color: var(--yellow); border: 1px solid var(--yellow); }
+    .rb-H,.rb-K { background: var(--r3); color: var(--red); border: 1px solid var(--red); animation: pulse .4s infinite; }
+
+    #pb { overflow-y: auto; }
+    .bt-hdr { padding: 10px 14px; border-bottom: 1px solid var(--b1); background: var(--bg2); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .bt-g { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: var(--b1); flex-shrink: 0; }
+    .bt-c { background: var(--panel); padding: 12px 14px; }
+    .bt-ct { font-size: 10px; letter-spacing: 2px; color: var(--t3); margin-bottom: 6px; }
+    .bt-v { font-family: var(--hud); font-size: 20px; font-weight: 700; line-height: 1; }
+    .bt-l { font-size: 10px; color: var(--t3); margin-top: 3px; }
+    .bt-wrap { padding: 12px; flex: 1; overflow-y: auto; }
+    .wf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 12px; }
+    .wf-c { background: var(--panel-glass); backdrop-filter: var(--glass-blur); border: var(--glass-border); padding: 15px; text-align: center; border-radius: 4px; }
+    .wf-ct { font-size: 10px; letter-spacing: 1.5px; color: var(--t3); margin-bottom: 4px; }
+    .wf-v { font-family: var(--hud); font-size: 15px; font-weight: 700; }
+    .wf-label { font-size: 9px; color: var(--t3); margin-top: 3px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 8px; }
+    th { padding: 6px 8px; text-align: left; color: var(--t3); border-bottom: 1px solid var(--b2); font-size: 10px; letter-spacing: 1.5px; }
+    td { padding: 5px 8px; border-bottom: 1px solid var(--b1); color: var(--t2); }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .tw { color: var(--green); }
+    .tl { color: var(--red); }
+    .tc { color: var(--green); }
+    .tp { color: var(--red); }
+
+    #pl { overflow: hidden; }
+    .log-bar { padding: 7px 11px; border-bottom: 1px solid var(--b1); background: var(--bg2); display: flex; gap: 5px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+    .lf { padding: 2px 9px; font-size: 10px; letter-spacing: 1px; border: 1px solid var(--b1); color: var(--t3); cursor: pointer; background: var(--bg3); transition: .15s; }
+    .lf:hover,.lf.on { border-color: var(--blue); color: var(--blue); }
+    .log-con { flex: 1; overflow-y: auto; }
+    .log-row { padding: 3px 11px; border-bottom: 1px solid var(--b1); display: grid; grid-template-columns: 50px 70px 90px 1fr; gap: 5px; font-size: 8px; }
+    .log-row:hover { background: var(--bg3); }
+    .log-ts { color: var(--t3); font-size: 10px; }
+    .log-lv { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+    .log-lv.INFO { color: var(--blue); }
+    .log-lv.SIGNAL { color: var(--green); }
+    .log-lv.TRADE { color: var(--purple); }
+    .log-lv.REGIME { color: var(--cyan); }
+    .log-lv.BT { color: var(--cyan); }
+    .log-lv.WARNING { color: var(--yellow); }
+    .log-lv.ERROR { color: var(--red); }
+    .log-lv.CRITICAL { color: var(--red); font-weight: 900; }
+    .log-mod { color: var(--t3); font-size: 10px; }
+    .log-msg { color: var(--t2); word-break: break-all; line-height: 1.5; }
+
+    .acc-toggle { display: flex; gap: 0; margin-bottom: 8px; border: 1px solid var(--b2); overflow: hidden; }
+    .acc-btn { flex: 1; padding: 6px 0; font-size: 8px; letter-spacing: 1.5px; border: none; background: transparent; color: var(--t3); cursor: pointer; font-family: var(--mono); transition: .2s; }
+    .acc-btn:hover { color: var(--t1); background: #ffffff08; }
+    .acc-btn.on { background: var(--panel2); color: var(--green); border-bottom: 2px solid var(--green); }
+    #acc-real-btn.on { color: var(--yellow); border-bottom-color: var(--yellow); }
+    .acc-item { display: flex; align-items: center; gap: 5px; padding: 4px 6px; cursor: pointer; border: 1px solid var(--b1); margin-bottom: 3px; font-size: 10px; transition: .15s; }
+    .acc-item:hover { border-color: var(--b2); background: var(--panel2); }
+    .acc-item.selected { border-color: var(--green); color: var(--green); }
+    .acc-item.real { border-color: #ffd60a33; }
+    .acc-item.real.selected { border-color: var(--yellow); color: var(--yellow); }
+    .acc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .acc-dot.demo { background: var(--green); }
+    .acc-dot.real { background: var(--yellow); }
+
+    .filt-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--b1); font-size: 8px; color: var(--t2); }
+    .filt-row:last-child { border: none; }
+    .filt-row input[type=checkbox] { accent-color: var(--green); width: 11px; height: 11px; cursor: pointer; }
+    .filt-label { flex: 1; }
+    .filt-badge { font-size: 8px; padding: 1px 4px; border: 1px solid; letter-spacing: 1px; flex-shrink: 0; }
+    .filt-badge.on { color: var(--green); border-color: var(--green); }
+    .filt-badge.off { color: var(--t3); border-color: var(--t3); }
+
+    #pp { overflow-y: auto; }
+    .pp-body { padding: 11px; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; align-content: start; }
+    .pp-panel { background: var(--panel); border: 1px solid var(--b1); padding: 12px; }
+    .pp-title { font-size: 10px; letter-spacing: 2.5px; color: var(--t3); margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--b1); }
+
+    #po { overflow-y: auto; }
+    .opt-hdr { padding: 9px 13px; border-bottom: 1px solid var(--b1); background: var(--bg2); display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+    .opt-body { padding: 11px; display: grid; grid-template-columns: 300px 1fr; gap: 11px; flex: 1; overflow-y: auto; }
+    .opt-panel { background: var(--panel); border: 1px solid var(--b1); padding: 12px; }
+    .opt-label { font-size: 10px; letter-spacing: 2px; color: var(--t3); margin-bottom: 7px; padding-bottom: 4px; border-bottom: 1px solid var(--b1); }
+    .opt-param-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; font-size: 8px; }
+    .opt-param-row input[type=checkbox] { accent-color: var(--green); }
+    .opt-param-name { flex: 1; color: var(--t2); }
+    .opt-param-row .inp { width: 42px; padding: 3px 5px; font-size: 8px; }
+    .opt-progress { height: 5px; background: var(--bg3); border: 1px solid var(--b1); overflow: hidden; margin: 7px 0; }
+    .opt-prog-fill { height: 100%; background: var(--green); transition: width .3s; width: 0%; }
+    .opt-log { background: var(--bg3); border: 1px solid var(--b1); padding: 7px; font-size: 10px; color: var(--t2); height: 90px; overflow-y: auto; white-space: pre-wrap; line-height: 1.7; font-family: var(--mono); }
+
+    #toasts { position: fixed; bottom: 32px; right: 14px; z-index: 999; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
+    .toast { padding: 8px 13px; font-size: 8px; letter-spacing: 1px; border-left: 2px solid; background: var(--panel2); max-width: 290px; pointer-events: auto; animation: tin .3s ease, tout .3s 2.8s ease forwards; }
+    .toast.s { border-color: var(--green); color: var(--green); }
+    .toast.e { border-color: var(--red); color: var(--red); }
+    .toast.i { border-color: var(--blue); color: var(--blue); }
+    .toast.w { border-color: var(--yellow); color: var(--yellow); }
+    @keyframes tin { from { opacity:0; transform:translateX(12px) } to { opacity:1; transform:none } }
+    @keyframes tout { to { opacity:0; transform:translateX(12px) } }
+
+    .modal-bg { display: none; position: fixed; inset: 0; background: #000000cc; z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal-bg.on { display: flex; }
+    .modal-box { background: var(--panel); border: 1px solid var(--b2); padding: 22px; min-width: 300px; max-width: 380px; width: 100%; position: relative; }
+    .modal-box::before { content: ''; display: block; height: 1px; background: linear-gradient(90deg,transparent,var(--green),transparent); margin-bottom: 14px; }
+    .modal-title { font-family: var(--hud); font-size: 13px; letter-spacing: 2px; margin-bottom: 11px; }
+    .modal-body { font-size: 9px; line-height: 2.2; color: var(--t2); margin-bottom: 16px; }
+    .modal-close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--t3); cursor: pointer; font-size: 16px; }
+    .modal-close:hover { color: var(--red); }
+
+    #pbrain { overflow-y: auto; }
+    .brain-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--b1); flex-shrink: 0; }
+    .brain-card { background: var(--panel); padding: 12px 14px; }
+    .bc-title { font-size: 10px; letter-spacing: 2.5px; color: var(--t3); margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--b1); display: flex; align-items: center; gap: 5px; }
+    .bc-title::before { content: ''; width: 3px; height: 3px; background: var(--cyan); flex-shrink: 0; }
+    .iq-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .iq-bar-track { flex: 1; height: 4px; background: var(--bg3); border: 1px solid var(--b1); overflow: hidden; }
+    .iq-bar-fill { height: 100%; transition: width .6s ease; }
+    .iq-val { font-family: var(--hud); font-size: 18px; font-weight: 700; }
+    .iq-row { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px; padding: 2px 0; border-bottom: 1px solid var(--b1); }
+    .iq-row:last-child { border: none; }
+    .iq-k { color: var(--t3); }
+    .iq-v { font-weight: 600; }
+
+    .kelly-panel { background: var(--bg3); border: 1px solid var(--b1); padding: 8px 10px; margin-top: 7px; }
+    .kelly-row { display: flex; justify-content: space-between; align-items: center; font-size: 10px; padding: 2px 0; border-bottom: 1px solid var(--b1); }
+    .kelly-row:last-child { border: none; }
+    .kelly-k { color: var(--t3); }
+    .kelly-v { font-weight: 700; }
+
+    .bl-item { padding: 4px 8px; border-bottom: 1px solid var(--b1); display: flex; justify-content: space-between; font-size: 10px; }
+    .bl-asset { color: var(--red); }
+    .bl-reason { font-size: 10px; color: var(--t3); }
+    .bl-ttl { color: var(--yellow); font-size: 10px; }
+
+    .recovery-panel { background: var(--g3); border: 1px solid var(--green); padding: 8px 10px; margin-top: 5px; display: none; }
+    .recovery-panel.on { display: block; }
+    .recovery-title { font-size: 10px; letter-spacing: 2px; color: var(--green); margin-bottom: 4px; }
+    .recovery-sig { font-family: var(--hud); font-size: 14px; color: var(--green); }
+
+    .hour-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 1px; margin-top: 6px; }
+    .hour-cell { height: 20px; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; }
+    .hour-cell:hover::after { content: attr(title); position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--b2); padding: 3px 6px; font-size: 10px; white-space: nowrap; z-index: 10; pointer-events: none; }
+
+    .mc-result { background: var(--bg3); border: 1px solid var(--b1); padding: 8px; margin-top: 6px; }
+    .mc-row { display: flex; justify-content: space-between; font-size: 10px; padding: 2px 0; border-bottom: 1px solid var(--b1); }
+    .mc-row:last-child { border: none; }
+
+    .hedge-panel { background: #0a1a0a; border: 1px solid var(--green); padding: 6px 8px; margin-top: 5px; display: none; }
+    .hedge-panel.on { display: block; }
+    .hedge-title { font-size: 9px; letter-spacing: 2px; color: var(--green); margin-bottom: 3px; }
+    .hedge-row { display: flex; justify-content: space-between; font-size: 10px; }
+
+    .shap-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--b1); font-size: 10px; }
+    .shap-row:last-child { border: none; }
+    .shap-name { color: var(--t3); width: 80px; flex-shrink: 0; }
+    .shap-bar-wrap { flex: 1; height: 5px; background: var(--bg3); overflow: hidden; }
+    .shap-bar { height: 100%; transition: width .4s; }
+    .shap-val { width: 50px; text-align: right; font-weight: 600; }
+
+    /* ── TOPBAR PREMIUM ── */
+    #topbar { background: linear-gradient(180deg,rgba(2,14,26,0.98) 0%,rgba(4,18,32,0.92) 100%); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-bottom: 1px solid rgba(255,255,255,0.06); position: relative; }
+    #topbar::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.6) 20%,rgba(0,255,136,0.6) 50%,rgba(180,79,255,0.6) 80%,transparent 100%); animation: shimmerBar 6s linear infinite; background-size: 200% 100%; }
+    @keyframes shimmerBar { 0% { background-position:200% 0 } 100% { background-position:-200% 0 } }
+
+    .brand { padding: 0 22px; border-right: 1px solid rgba(255,255,255,0.05); background: linear-gradient(90deg,rgba(0,212,255,0.06) 0%,transparent 100%); position: relative; }
+    .brand::after { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px; background: linear-gradient(180deg,transparent,var(--green),transparent); box-shadow: 0 0 12px var(--green); }
+    .brand-name { font-size: 14px; letter-spacing: 5px; background: linear-gradient(135deg,#00ff88 0%,#00d4ff 50%,#b44fff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 8px rgba(0,255,136,0.4)); }
+    .brand-sub { font-size: 10px; letter-spacing: 2.5px; color: rgba(255,255,255,0.3); }
+
+    .tab { padding: 0 16px; font-size: 8px; letter-spacing: 2px; font-family: var(--hud); font-weight: 400; border-right: 1px solid rgba(255,255,255,0.04); transition: all 0.2s ease; position: relative; }
+    .tab:hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
+    .tab::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 0; height: 0; background: currentColor; border-radius: 50%; opacity: 0; transition: all 0.2s; }
+    .tab:hover::before,.tab.on::before { width: 3px; height: 3px; opacity: 0.7; }
+
+    .tab[data-p="pa"].on  { color:#00d4ff; background:rgba(0,212,255,0.07); text-shadow:0 0 12px rgba(0,212,255,0.5); }
+    .tab[data-p="pd"].on  { color:#00ff88; background:rgba(0,255,136,0.07); text-shadow:0 0 12px rgba(0,255,136,0.5); }
+    .tab[data-p="pb"].on  { color:#b44fff; background:rgba(180,79,255,0.07); text-shadow:0 0 12px rgba(180,79,255,0.5); }
+    .tab[data-p="pbrain"].on { color:#ff8c00; background:rgba(255,140,0,0.07); text-shadow:0 0 12px rgba(255,140,0,0.5); }
+    .tab[data-p="pml"].on  { color:#4a9af5; background:rgba(74,154,245,0.07); text-shadow:0 0 12px rgba(74,154,245,0.5); }
+    .tab[data-p="po"].on   { color:#ffd60a; background:rgba(255,214,10,0.07); text-shadow:0 0 12px rgba(255,214,10,0.5); }
+    .tab[data-p="pp"].on   { color:#ff2d55; background:rgba(255,45,85,0.07); text-shadow:0 0 12px rgba(255,45,85,0.5); }
+    .tab[data-p="pl"].on   { color:#2ecc71; background:rgba(46,204,113,0.07); text-shadow:0 0 12px rgba(46,204,113,0.5); }
+    .tab[data-p="psup"].on { color:#a855f7; background:rgba(168,85,247,0.07); text-shadow:0 0 12px rgba(168,85,247,0.5); }
+
+    .status-pill { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 3px 9px; gap: 5px; transition: border-color 0.3s; }
+    .status-pill:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); }
+    #clock { font-family: var(--mono); font-size: 10px; color: var(--blue); letter-spacing: 2px; background: rgba(10,240,255,0.06); border: 1px solid rgba(10,240,255,0.15); border-radius: 4px; padding: 3px 8px; }
+
+    /* ── SIDEBAR PREMIUM ── */
+    #sidebar { background: linear-gradient(180deg,rgba(3,12,24,0.95) 0%,rgba(2,10,20,0.98) 100%); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-right: 1px solid rgba(255,255,255,0.05); box-shadow: 4px 0 30px rgba(0,0,0,0.5); }
+    #app[data-tab="pa"]     #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(0,212,255,0.7),transparent); }
+    #app[data-tab="pd"]     #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(0,255,136,0.7),transparent); }
+    #app[data-tab="pb"]     #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(180,79,255,0.7),transparent); }
+    #app[data-tab="pbrain"] #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(255,140,0,0.7),transparent); }
+    #app[data-tab="pml"]    #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(74,154,245,0.7),transparent); }
+    #app[data-tab="po"]     #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(255,214,10,0.7),transparent); }
+    #app[data-tab="pp"]     #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(255,45,85,0.7),transparent); }
+    #app[data-tab="pl"]     #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(46,204,113,0.7),transparent); }
+    #app[data-tab="psup"]   #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(168,85,247,0.7),transparent); }
+    #app[data-tab="pcloud"] #sidebar::before { content:''; position:absolute; top:0; left:0; bottom:0; width:2px; background:linear-gradient(180deg,transparent,rgba(0,240,255,0.7),transparent); }
+
+    .sb-hdr { font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,0.45); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; gap: 7px; text-transform: uppercase; }
+    .sb-hdr::before { content: ''; width: 12px; height: 1px; background: currentColor; opacity: 0.6; flex-shrink: 0; }
+    .sb-sec { border-bottom: 1px solid rgba(255,255,255,0.04); padding: 12px 13px; transition: background 0.2s; position: relative; }
+    .sb-sec:hover { background: rgba(255,255,255,0.015); }
+
+    /* ── PANELS GLASSMORPHISM ── */
+    .d-c,.bt-c,.wf-c,.brain-card,.ms,[class*="-card"],.panel { background: rgba(6,20,38,0.65) !important; border: 1px solid rgba(255,255,255,0.07) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.05) !important; border-radius: 4px; transition: box-shadow 0.2s,border-color 0.2s; }
+    .d-c:hover,.bt-c:hover,.brain-card:hover { border-color: rgba(255,255,255,0.1) !important; box-shadow: 0 6px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06) !important; }
+
+    /* ── PAGE BACKGROUNDS ── */
+    .page { position: relative; overflow: hidden; transition: opacity 0.25s ease; }
+    .page:not(.on) { opacity: 0; }
+    .page.on { opacity: 1; animation: fadeInTab 0.3s ease forwards; }
+    @keyframes fadeInTab { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:translateY(0) } }
+    .page > * { position: relative; z-index: 1; }
+
+    #content { position: relative; overflow: hidden; }
+    #content::before { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:0; transition:opacity 0.4s ease; background-repeat:repeat; background-size:60px 60px; }
+    #content::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:0; background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px); }
+
+    #app[data-tab="pa"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' fill='none'/%3E%3Cpath d='M0 30 Q10 10 20 30 Q30 50 40 30 Q50 10 60 30' stroke='%2300d4ff' stroke-width='0.4' fill='none' opacity='0.18'/%3E%3Cline x1='0' y1='0' x2='60' y2='0' stroke='%2300d4ff' stroke-width='0.2' opacity='0.07'/%3E%3Cline x1='0' y1='30' x2='60' y2='30' stroke='%2300d4ff' stroke-width='0.2' opacity='0.07'/%3E%3Cline x1='0' y1='60' x2='60' y2='60' stroke='%2300d4ff' stroke-width='0.2' opacity='0.07'/%3E%3Cline x1='0' y1='0' x2='0' y2='60' stroke='%2300d4ff' stroke-width='0.2' opacity='0.07'/%3E%3Cline x1='30' y1='0' x2='30' y2='60' stroke='%2300d4ff' stroke-width='0.2' opacity='0.07'/%3E%3Ccircle cx='30' cy='30' r='1.5' fill='%2300d4ff' opacity='0.15'/%3E%3C/svg%3E"); }
+    #app[data-tab="pa"] #content { background: radial-gradient(ellipse 70% 50% at 80% 20%,rgba(0,212,255,0.04) 0%,transparent 70%); }
+    #app[data-tab="pd"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='60'%3E%3Crect width='40' height='60' fill='none'/%3E%3Crect x='6' y='20' width='6' height='25' rx='1' fill='%2300ff88' opacity='0.12'/%3E%3Cline x1='9' y1='15' x2='9' y2='20' stroke='%2300ff88' stroke-width='0.8' opacity='0.12'/%3E%3Cline x1='9' y1='45' x2='9' y2='52' stroke='%2300ff88' stroke-width='0.8' opacity='0.12'/%3E%3Crect x='20' y='30' width='6' height='15' rx='1' fill='%23ff2d55' opacity='0.08'/%3E%3Cline x1='23' y1='24' x2='23' y2='30' stroke='%23ff2d55' stroke-width='0.8' opacity='0.08'/%3E%3Cline x1='23' y1='45' x2='23' y2='50' stroke='%23ff2d55' stroke-width='0.8' opacity='0.08'/%3E%3Crect x='33' y='22' width='6' height='22' rx='1' fill='%2300ff88' opacity='0.1'/%3E%3C/svg%3E"); background-size:40px 60px; }
+    #app[data-tab="pd"] #content { background: radial-gradient(ellipse 70% 50% at 20% 80%,rgba(0,255,136,0.04) 0%,transparent 70%); }
+    #app[data-tab="pb"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='none'/%3E%3Cpath d='M0 80 L10 60 L20 65 L30 45 L40 50 L50 30 L60 35 L70 20 L80 25' stroke='%23b44fff' stroke-width='0.5' fill='none' opacity='0.2'/%3E%3Cpath d='M0 80 L10 60 L20 65 L30 45 L40 50 L50 30 L60 35 L70 20 L80 25 L80 80 Z' fill='%23b44fff' opacity='0.04'/%3E%3Cline x1='0' y1='40' x2='80' y2='40' stroke='%23b44fff' stroke-width='0.3' stroke-dasharray='4,4' opacity='0.1'/%3E%3C/svg%3E"); background-size:80px 80px; }
+    #app[data-tab="pb"] #content { background: radial-gradient(ellipse 60% 60% at 70% 30%,rgba(180,79,255,0.04) 0%,transparent 70%); }
+    #app[data-tab="pbrain"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='none'/%3E%3Ccircle cx='10' cy='10' r='2.5' fill='none' stroke='%23ff8c00' stroke-width='0.6' opacity='0.18'/%3E%3Ccircle cx='40' cy='25' r='2.5' fill='none' stroke='%23ff8c00' stroke-width='0.6' opacity='0.18'/%3E%3Ccircle cx='70' cy='10' r='2.5' fill='none' stroke='%23ff8c00' stroke-width='0.6' opacity='0.18'/%3E%3Ccircle cx='25' cy='55' r='2.5' fill='none' stroke='%23ff8c00' stroke-width='0.6' opacity='0.18'/%3E%3Ccircle cx='60' cy='60' r='2.5' fill='none' stroke='%23ff8c00' stroke-width='0.6' opacity='0.18'/%3E%3Cline x1='10' y1='10' x2='40' y2='25' stroke='%23ff8c00' stroke-width='0.4' opacity='0.12'/%3E%3Cline x1='40' y1='25' x2='70' y2='10' stroke='%23ff8c00' stroke-width='0.4' opacity='0.12'/%3E%3Cline x1='40' y1='25' x2='25' y2='55' stroke='%23ff8c00' stroke-width='0.4' opacity='0.12'/%3E%3Cline x1='40' y1='25' x2='60' y2='60' stroke='%23ff8c00' stroke-width='0.4' opacity='0.12'/%3E%3C/svg%3E"); background-size:80px 80px; }
+    #app[data-tab="pbrain"] #content { background: radial-gradient(ellipse 60% 60% at 50% 50%,rgba(255,140,0,0.04) 0%,transparent 70%); }
+    #app[data-tab="pml"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Crect width='120' height='60' fill='none'/%3E%3Cpath d='M0 30 C15 5 25 5 30 30 C35 55 45 55 60 30 C75 5 85 5 90 30 C95 55 105 55 120 30' stroke='%234a9af5' stroke-width='0.6' fill='none' opacity='0.18'/%3E%3Ccircle cx='30' cy='30' r='1.5' fill='%234a9af5' opacity='0.18'/%3E%3Ccircle cx='60' cy='30' r='1.5' fill='%234a9af5' opacity='0.18'/%3E%3Ccircle cx='90' cy='30' r='1.5' fill='%234a9af5' opacity='0.18'/%3E%3C/svg%3E"); background-size:120px 60px; }
+    #app[data-tab="pml"] #content { background: radial-gradient(ellipse 70% 50% at 30% 70%,rgba(74,154,245,0.04) 0%,transparent 70%); }
+    #app[data-tab="po"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='100'%3E%3Crect width='40' height='100' fill='none'/%3E%3Cpath d='M10 0 Q30 12 10 25 Q-5 37 10 50 Q30 62 10 75 Q-5 87 10 100' stroke='%23ffd60a' stroke-width='0.7' fill='none' opacity='0.18'/%3E%3Cpath d='M30 0 Q10 12 30 25 Q45 37 30 50 Q10 62 30 75 Q45 87 30 100' stroke='%23ffd60a' stroke-width='0.7' fill='none' opacity='0.18'/%3E%3Cline x1='10' y1='12' x2='30' y2='12' stroke='%23ffd60a' stroke-width='0.5' opacity='0.14'/%3E%3Cline x1='10' y1='37' x2='30' y2='37' stroke='%23ffd60a' stroke-width='0.5' opacity='0.14'/%3E%3Cline x1='10' y1='62' x2='30' y2='62' stroke='%23ffd60a' stroke-width='0.5' opacity='0.14'/%3E%3Cline x1='10' y1='87' x2='30' y2='87' stroke='%23ffd60a' stroke-width='0.5' opacity='0.14'/%3E%3C/svg%3E"); background-size:40px 100px; }
+    #app[data-tab="po"] #content { background: radial-gradient(ellipse 60% 70% at 80% 50%,rgba(255,214,10,0.04) 0%,transparent 70%); }
+    #app[data-tab="pp"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='none'/%3E%3Crect x='0.5' y='0.5' width='49' height='49' fill='none' stroke='%23ff2d55' stroke-width='0.3' opacity='0.08'/%3E%3Ccircle cx='25' cy='25' r='8' fill='none' stroke='%23ff2d55' stroke-width='0.4' opacity='0.12'/%3E%3Ccircle cx='25' cy='25' r='3' fill='none' stroke='%23ff2d55' stroke-width='0.4' opacity='0.15'/%3E%3Cline x1='25' y1='0' x2='25' y2='17' stroke='%23ff2d55' stroke-width='0.3' opacity='0.1'/%3E%3Cline x1='25' y1='33' x2='25' y2='50' stroke='%23ff2d55' stroke-width='0.3' opacity='0.1'/%3E%3Cline x1='0' y1='25' x2='17' y2='25' stroke='%23ff2d55' stroke-width='0.3' opacity='0.1'/%3E%3Cline x1='33' y1='25' x2='50' y2='25' stroke='%23ff2d55' stroke-width='0.3' opacity='0.1'/%3E%3C/svg%3E"); background-size:50px 50px; }
+    #app[data-tab="pp"] #content { background: radial-gradient(ellipse 60% 60% at 20% 80%,rgba(255,45,85,0.04) 0%,transparent 70%); }
+    #app[data-tab="pl"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='14'%3E%3Crect width='200' height='14' fill='none'/%3E%3Cline x1='0' y1='7' x2='200' y2='7' stroke='%232ecc71' stroke-width='0.25' opacity='0.08'/%3E%3C/svg%3E"); background-size:200px 14px; }
+    #app[data-tab="pl"] #content { background: radial-gradient(ellipse 80% 40% at 10% 50%,rgba(46,204,113,0.03) 0%,transparent 70%); }
+    #app[data-tab="psup"] #content::before { opacity:1; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='none'/%3E%3Cellipse cx='50' cy='50' rx='45' ry='20' fill='none' stroke='%23a855f7' stroke-width='0.5' opacity='0.12' transform='rotate(-30 50 50)'/%3E%3Cellipse cx='50' cy='50' rx='45' ry='20' fill='none' stroke='%23a855f7' stroke-width='0.5' opacity='0.12' transform='rotate(30 50 50)'/%3E%3Cellipse cx='50' cy='50' rx='45' ry='20' fill='none' stroke='%23a855f7' stroke-width='0.5' opacity='0.12' transform='rotate(90 50 50)'/%3E%3Ccircle cx='50' cy='50' r='3' fill='%23a855f7' opacity='0.2'/%3E%3C/svg%3E"); background-size:100px 100px; }
+    #app[data-tab="psup"] #content { background: radial-gradient(ellipse 70% 70% at 50% 40%,rgba(168,85,247,0.05) 0%,transparent 70%); }
+
+    #app[data-tab="pa"]     #topbar { border-bottom-color:rgba(0,212,255,0.3); box-shadow:0 4px 20px rgba(0,212,255,0.08),0 1px 0 rgba(0,212,255,0.15); }
+    #app[data-tab="pd"]     #topbar { border-bottom-color:rgba(0,255,136,0.3); box-shadow:0 4px 20px rgba(0,255,136,0.08),0 1px 0 rgba(0,255,136,0.15); }
+    #app[data-tab="pb"]     #topbar { border-bottom-color:rgba(180,79,255,0.3); box-shadow:0 4px 20px rgba(180,79,255,0.08),0 1px 0 rgba(180,79,255,0.15); }
+    #app[data-tab="pbrain"] #topbar { border-bottom-color:rgba(255,140,0,0.3); box-shadow:0 4px 20px rgba(255,140,0,0.08),0 1px 0 rgba(255,140,0,0.15); }
+    #app[data-tab="pml"]    #topbar { border-bottom-color:rgba(74,154,245,0.3); box-shadow:0 4px 20px rgba(74,154,245,0.08),0 1px 0 rgba(74,154,245,0.15); }
+    #app[data-tab="po"]     #topbar { border-bottom-color:rgba(255,214,10,0.3); box-shadow:0 4px 20px rgba(255,214,10,0.08),0 1px 0 rgba(255,214,10,0.15); }
+    #app[data-tab="pp"]     #topbar { border-bottom-color:rgba(255,45,85,0.3); box-shadow:0 4px 20px rgba(255,45,85,0.08),0 1px 0 rgba(255,45,85,0.15); }
+    #app[data-tab="pl"]     #topbar { border-bottom-color:rgba(46,204,113,0.3); box-shadow:0 4px 20px rgba(46,204,113,0.08),0 1px 0 rgba(46,204,113,0.15); }
+    #app[data-tab="psup"]   #topbar { border-bottom-color:rgba(168,85,247,0.4); box-shadow:0 4px 20px rgba(168,85,247,0.1),0 1px 0 rgba(168,85,247,0.2); }
+    #app[data-tab="pcloud"] #topbar { border-bottom-color:rgba(0,240,255,0.4); box-shadow:0 4px 20px rgba(0,240,255,0.1),0 1px 0 rgba(0,240,255,0.2); }
+
+    #app[data-tab="pa"]     #content ::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.3); }
+    #app[data-tab="pd"]     #content ::-webkit-scrollbar-thumb { background:rgba(0,255,136,0.3); }
+    #app[data-tab="pb"]     #content ::-webkit-scrollbar-thumb { background:rgba(180,79,255,0.3); }
+    #app[data-tab="pbrain"] #content ::-webkit-scrollbar-thumb { background:rgba(255,140,0,0.3); }
+    #app[data-tab="pml"]    #content ::-webkit-scrollbar-thumb { background:rgba(74,154,245,0.3); }
+    #app[data-tab="po"]     #content ::-webkit-scrollbar-thumb { background:rgba(255,214,10,0.3); }
+    #app[data-tab="pp"]     #content ::-webkit-scrollbar-thumb { background:rgba(255,45,85,0.3); }
+    #app[data-tab="pl"]     #content ::-webkit-scrollbar-thumb { background:rgba(46,204,113,0.3); }
+    #app[data-tab="psup"]   #content ::-webkit-scrollbar-thumb { background:rgba(168,85,247,0.3); }
+
+    .btn { transition: all 0.15s ease; letter-spacing: 1px; }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+    .btn:active { transform: translateY(0); filter: brightness(0.95); }
+
+    #app[data-tab="pa"]     .inp:focus { border-color:rgba(0,212,255,0.5); box-shadow:0 0 12px rgba(0,212,255,0.15); }
+    #app[data-tab="pd"]     .inp:focus { border-color:rgba(0,255,136,0.5); box-shadow:0 0 12px rgba(0,255,136,0.15); }
+    #app[data-tab="pb"]     .inp:focus { border-color:rgba(180,79,255,0.5); box-shadow:0 0 12px rgba(180,79,255,0.15); }
+    #app[data-tab="pbrain"] .inp:focus { border-color:rgba(255,140,0,0.5); box-shadow:0 0 12px rgba(255,140,0,0.15); }
+    #app[data-tab="pml"]    .inp:focus { border-color:rgba(74,154,245,0.5); box-shadow:0 0 12px rgba(74,154,245,0.15); }
+    #app[data-tab="po"]     .inp:focus { border-color:rgba(255,214,10,0.5); box-shadow:0 0 12px rgba(255,214,10,0.15); }
+    #app[data-tab="pp"]     .inp:focus { border-color:rgba(255,45,85,0.5); box-shadow:0 0 12px rgba(255,45,85,0.15); }
+
+    /* ── Supervisor IA ── */
+    #psup::before { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ccircle cx='20' cy='30' r='4' fill='none' stroke='%23a855f7' stroke-width='1'/%3E%3Ccircle cx='60' cy='20' r='4' fill='none' stroke='%23a855f7' stroke-width='1'/%3E%3Ccircle cx='100' cy='30' r='4' fill='none' stroke='%23a855f7' stroke-width='1'/%3E%3Ccircle cx='40' cy='70' r='4' fill='none' stroke='%23a855f7' stroke-width='1'/%3E%3Ccircle cx='80' cy='70' r='4' fill='none' stroke='%23a855f7' stroke-width='1'/%3E%3Ccircle cx='60' cy='105' r='4' fill='none' stroke='%23a855f7' stroke-width='1'/%3E%3Cline x1='24' y1='30' x2='56' y2='22' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='64' y1='22' x2='96' y2='30' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='22' y1='33' x2='38' y2='67' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='62' y1='24' x2='42' y2='67' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='62' y1='24' x2='78' y2='67' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='98' y1='33' x2='82' y2='67' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='44' y1='74' x2='58' y2='102' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3Cline x1='76' y1='74' x2='62' y2='102' stroke='%23a855f7' stroke-width='0.6' opacity='0.5'/%3E%3C/svg%3E"); background-size:120px 120px; opacity:0.08; }
+    .sup-metric-box { background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.2); border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:3px; }
+    .sup-mbl { font-size:9px; color:rgba(168,85,247,0.7); letter-spacing:1px; text-transform:uppercase; }
+    .sup-mbv { font-family:var(--mono); font-size:13px; color:#a855f7; font-weight:700; }
+    .sup-card { background:rgba(168,85,247,0.05); border:1px solid rgba(168,85,247,0.2); border-radius:4px; padding:10px; transition:border-color 0.2s; }
+    .sup-card:hover { border-color:rgba(168,85,247,0.5); }
+    .sup-card-title { font-size:8px; color:#a855f7; font-weight:700; letter-spacing:1px; margin-bottom:4px; }
+    .sup-card-desc { font-size:10px; color:var(--t2); line-height:1.5; margin-bottom:6px; }
+    .sup-card-code { font-family:var(--mono); font-size:10px; color:var(--cyan); background:var(--bg2); padding:4px 6px; border-radius:2px; border:1px solid rgba(0,212,255,0.15); margin-bottom:6px; overflow-x:auto; white-space:nowrap; }
+    .sup-card-actions { display:flex; gap:4px; }
+    .sup-card-btn { padding:3px 8px; font-size:10px; border:1px solid; border-radius:2px; cursor:pointer; font-family:var(--hud); letter-spacing:1px; background:transparent; transition:all 0.2s; }
+    .sup-card-btn.apply { border-color:#00ff88; color:#00ff88; }
+    .sup-card-btn.apply:hover { background:#00ff88; color:var(--bg); }
+    .sup-card-btn.ignore { border-color:var(--red); color:var(--red); }
+    .sup-card-btn.ignore:hover { background:var(--red); color:var(--bg); }
+    .sup-pattern { background:rgba(255,107,107,0.07); border:1px solid rgba(255,107,107,0.2); border-radius:3px; padding:6px 8px; font-size:10px; color:var(--t2); }
+    .sup-pattern-rule { font-family:var(--mono); color:#ff6b6b; font-size:10px; margin-bottom:3px; }
+    .sup-pattern-conf { color:var(--t3); font-size:9px; }
+
+    /* ── Sidebar accent per tab ── */
+    #app[data-tab="pa"] #sidebar  { border-right-color:rgba(0,212,255,0.25); }
+    #app[data-tab="pd"] #sidebar  { border-right-color:rgba(0,255,136,0.25); }
+    #app[data-tab="pb"] #sidebar  { border-right-color:rgba(180,79,255,0.25); }
+    #app[data-tab="pbrain"] #sidebar { border-right-color:rgba(255,140,0,0.25); }
+    #app[data-tab="pml"] #sidebar { border-right-color:rgba(74,154,245,0.25); }
+    #app[data-tab="po"] #sidebar  { border-right-color:rgba(255,214,10,0.25); }
+    #app[data-tab="pp"] #sidebar  { border-right-color:rgba(255,45,85,0.25); }
+    #app[data-tab="pl"] #sidebar  { border-right-color:rgba(46,204,113,0.25); }
+    #app[data-tab="psup"] #sidebar { border-right-color:rgba(168,85,247,0.4); }
+
+    /* LP Predictor styles */
+    #pml .metric-box { background:var(--b1); border:1px solid var(--b2); padding:5px 7px; border-radius:3px; display:flex; flex-direction:column; gap:3px; }
+    #pml .mbl { font-size:9px; color:var(--t3); letter-spacing:1px; text-transform:uppercase; }
+    #pml .mbv { font-family:var(--hud); font-size:11px; color:var(--t1); }
+    .lp-fi-row { display:flex; align-items:center; gap:6px; padding:3px 0; border-bottom:1px solid var(--b1); }
+    .lp-fi-name { font-size:10px; color:var(--t2); width:72px; flex-shrink:0; font-family:var(--mono); }
+    .lp-fi-bar-wrap { flex:1; height:4px; background:var(--b2); border-radius:2px; overflow:hidden; }
+    .lp-fi-bar { height:100%; transition:width .5s; }
+    .lp-fi-w { font-size:10px; font-family:var(--mono); width:52px; text-align:right; flex-shrink:0; }
+    .lp-pred-chip { font-size:10px; font-family:var(--mono); padding:3px 6px; border-radius:2px; border:1px solid var(--b2); }
+
+    #btn-recon { width:100%; margin-bottom:3px; transition:.2s; }
+    #btn-recon:hover { background:var(--yellow) !important; color:var(--bg) !important; }
+    #btn-diag { width:100%; transition:.2s; }
+    #btn-diag:hover { background:var(--blue) !important; color:var(--bg) !important; }
+    .cb-row .cb-v#cs-retry { color:var(--cyan); }
+    .cb-row .cb-v#cs-latency { color:var(--green); }
+
+    .news-item { padding:5px 8px; border-bottom:1px solid var(--b1); font-size:10px; display:grid; grid-template-columns:auto 1fr auto; gap:6px; align-items:center; }
+    .news-impact { font-size:10px; font-weight:700; padding:1px 5px; border:1px solid; }
+    .news-impact.H { color:var(--red); border-color:var(--red); background:var(--r3); }
+    .news-impact.M { color:var(--yellow); border-color:var(--yellow); background:#1a1200; }
+    .news-impact.L { color:var(--t3); border-color:var(--t3); }
+    .news-block { color:var(--red); font-size:10px; font-weight:700; }
+    .news-ok { color:var(--green); font-size:10px; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ALERTA FILE:// -->
+  <div id="proto-alert">
+    <div class="alert-box">
+      <div class="alert-title">⚠️ ARQUIVO file:// — WEBSOCKET BLOQUEADO</div>
+      <div style="font-size:10px;color:var(--t2);margin-bottom:14px;line-height:1.8">
+        O browser bloqueia WebSocket quando o arquivo é aberto localmente.<br>
+        <b style="color:var(--yellow)">Use sempre a URL da Vercel ou um servidor local.</b>
+      </div>
+      <div class="alert-step">
+        <div class="alert-step-n">1</div>
+        <div class="alert-step-t"><b>Vercel (recomendado)</b><br>
+          Faça deploy neste repositório na <a href="https://vercel.com" target="_blank">vercel.com</a> → link HTTPS gratuito</div>
+      </div>
+      <div class="alert-step">
+        <div class="alert-step-n">2</div>
+        <div class="alert-step-t"><b>Python local</b><br>
+          Terminal: <span style="color:var(--green)">python3 -m http.server 8080</span> → abrir localhost:8080</div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--b1);margin:14px 0" />
+      <button class="alert-btn" onclick="document.getElementById('proto-alert').style.display='none'">✓ JÁ ESTOU EM HTTPS</button>
+      <button class="alert-btn sec" onclick="document.getElementById('proto-alert').style.display='none'">Fechar e tentar mesmo assim</button>
+    </div>
+  </div>
+
+  <div id="app" data-tab="pa">
+
+    <!-- ═══ TOPBAR ═══ -->
+    <div id="topbar">
+      <div class="brand">
+        <div>
+          <div class="brand-name">ASSETANA</div>
+          <div class="brand-sub">V23 · CLOUD INTELLIGENCE ENGINE</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab on" data-p="pa" onclick="nav(this)">📊 ANALYZER</div>
+        <div class="tab" data-p="pd" onclick="nav(this)">💹 DASHBOARD</div>
+        <div class="tab" data-p="pb" onclick="nav(this)">🔬 BACKTEST</div>
+        <div class="tab" data-p="pbrain" onclick="nav(this)">🧠 BRAIN V21</div>
+        <div class="tab" data-p="pml" onclick="nav(this)">🤖 PREDICTOR</div>
+        <div class="tab" data-p="po" onclick="nav(this)">⚙️ OTIMIZADOR</div>
+        <div class="tab" data-p="pp" onclick="nav(this)">🔧 PARÂMETROS</div>
+        <div class="tab" data-p="pl" onclick="nav(this)">📋 LOGS</div>
+        <div class="tab" data-p="psup" onclick="nav(this)" style="border-left:1px solid rgba(168,85,247,0.3)">🧬 SUPERVISOR IA</div>
+        <div class="tab" data-p="pcloud" onclick="nav(this)" style="border-left:1px solid rgba(0,240,255,0.3)">☁️ CLOUD V23</div>
+      </div>
+      <div class="top-right">
+        <div class="status-pill"><div class="led led-off" id="led-ably"></div><span id="ably-st">ABLY OFF</span></div>
+        <div class="status-pill"><div class="led led-off" id="led-agent"></div><span id="agent-st">AGENT IDLE</span></div>
+        <div class="status-pill"><div class="led led-off" id="led-td"></div><span id="td-st">TD OFF</span></div>
+        <div class="status-pill"><div class="led led-off" id="led-dv"></div><span id="dv-st">DV OFF</span></div>
+        <div class="status-pill" id="sent-pill" style="display:none"><div class="led led-off" id="led-sent"></div><span id="sent-st">SENT --</span></div>
+        <div class="status-pill"><div class="led led-off" id="led-hedge"></div><span id="hedge-st">HEDGE OFF</span></div>
+        <div id="clock">--:--:--</div>
+      </div>
+    </div>
+
+    <!-- ═══ MAIN ═══ -->
+    <div id="main">
+      <!-- ═══ SIDEBAR ═══ -->
+      <div id="sidebar">
+        <div class="sb-sec">
+          <div class="sb-hdr">ATIVO — TWELVEDATA + DERIV</div>
+          <div class="irow"><div class="lbl">MERCADO</div>
+            <select class="inp" id="mkt-type" onchange="onMktTypeChange()">
+              <option value="synthetic">🎲 Synthetics (DEMO+REAL)</option>
+              <option value="forex">💱 Forex</option>
+              <option value="crypto">₿ Crypto</option>
+              <option value="commodities">🥇 Commodities</option>
+            </select>
+          </div>
+          <div class="irow"><div class="lbl">ATIVO</div><select class="inp" id="unified-asset" onchange="onAssetChange()"></select></div>
+          <div class="irow"><div class="lbl">DURAÇÃO CONTRATO</div>
+            <select class="inp" id="at-dur">
+              <option value="1" selected>1 minuto</option>
+              <option value="2">2 minutos</option>
+              <option value="3">3 minutos</option>
+              <option value="5">5 minutos</option>
+              <option value="10">10 minutos</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center;margin-top:4px;padding:5px 0;border-top:1px solid var(--b1)">
+            <span style="font-size:7px;color:var(--t3)">TD:</span><span id="sync-td" style="font-size:7.5px;color:var(--t2)">—</span>
+            <span style="font-size:7px;color:var(--t3);margin-left:auto">DV:</span><span id="sync-dv" style="font-size:7.5px;color:var(--t2)">—</span>
+          </div>
+          <button class="btn prim" id="btn-load-td" onclick="tdLoad()">▶ CARREGAR DADOS REAIS</button>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">TWELVEDATA — API</div>
+          <div class="irow"><div class="lbl">API KEY <a href="https://twelvedata.com/apikey" target="_blank">↗ Obter</a></div>
+            <input class="inp" id="td-key" type="password" value="35378f092ee740fbb0d9ea8e30814ebd" /></div>
+          <div id="td-rl-countdown" style="font-size:9px;color:var(--yellow);padding:2px 0;min-height:14px"></div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">NEWS FILTER — MARKETAUX (opcional)</div>
+          <div class="irow"><div class="lbl">API KEY <a href="https://www.marketaux.com/" target="_blank">↗ Grátis</a></div>
+            <input class="inp" id="news-api-key" type="password" placeholder="Deixe vazio = simulado" /></div>
+          <div style="font-size:9px;color:var(--t3);padding:2px 4px">Sem chave: notícias simuladas. Com chave: dados reais de impacto.</div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">SESSÕES DE TRADING (UTC)</div>
+          <div class="irow"><div class="lbl">HORÁRIOS</div>
+            <input class="inp" id="filter-session-times" placeholder="08:00-12:00,13:00-17:00" title="Separar sessões por vírgula" /></div>
+          <div style="font-size:9px;color:var(--t3);padding:2px 4px">Formato HH:MM-HH:MM (UTC). Vazio = qualquer hora.</div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">DERIV — EXECUÇÃO</div>
+          <div id="proto-warn" style="display:none">⚠️ <b>file:// detectado</b><br><span>WebSocket bloqueado.</span></div>
+          <div class="acc-toggle" id="acc-toggle">
+            <button class="acc-btn on" id="acc-demo-btn" onclick="selectAccountType('demo')">🎮 DEMO</button>
+            <button class="acc-btn" id="acc-real-btn" onclick="selectAccountType('real')">💰 REAL</button>
+          </div>
+          <div id="acc-info" style="display:none;margin-bottom:7px">
+            <div style="font-size:7px;color:var(--t3);margin-bottom:4px;letter-spacing:1px">CONTA ATIVA</div>
+            <div id="acc-active-id" style="font-size:9px;color:var(--green)">—</div>
+            <div id="acc-active-bal" style="font-size:8px;color:var(--t2)">—</div>
+          </div>
+          <div class="irow"><div class="lbl">APP ID</div><input class="inp" id="dv-appid" value="1089" /></div>
+          <div style="margin-bottom:5px">
+            <div class="lbl" style="margin-bottom:3px">TOKEN DEMO <a href="https://app.deriv.com/account/api-token" target="_blank">↗</a></div>
+            <input class="inp" id="dv-token-demo" type="password" placeholder="Token conta DEMO" />
+          </div>
+          <div style="margin-bottom:8px">
+            <div class="lbl" style="margin-bottom:3px">TOKEN REAL <a href="https://app.deriv.com/account/api-token" target="_blank">↗</a></div>
+            <input class="inp" id="dv-token-real" type="password" placeholder="Token conta REAL" />
+          </div>
+          <input id="dv-token" type="hidden" />
+          <div class="g2" style="margin-bottom:7px">
+            <button class="btn prim" id="btn-con" onclick="dvConnect()">▶ CONECTAR</button>
+            <button class="btn dang" id="btn-dis" onclick="dvDisconnect()" style="display:none">✕ SAIR</button>
+          </div>
+          <div style="margin-bottom:7px">
+            <button class="btn" id="btn-recon" onclick="dvForceReconnect()" style="font-size:8px;padding:5px 8px;border-color:var(--yellow);color:var(--yellow);display:none">🔄 FORÇAR RECONEXÃO</button>
+            <button class="btn" id="btn-diag" onclick="dvDiagnostic()" style="font-size:8px;padding:5px 8px;border-color:var(--blue);color:var(--blue)">🔍 DIAGNÓSTICO</button>
+          </div>
+          <div class="conn-box">
+            <div class="cb-row"><span class="cb-k">STATUS</span><span class="cb-v" id="cs-status">Desconectado</span></div>
+            <div class="cb-row"><span class="cb-k">CONTA</span><span class="cb-v" id="cs-acc-type" style="color:var(--blue)">DEMO</span></div>
+            <div class="cb-row"><span class="cb-k">ENDPOINT</span><span class="cb-v" id="cs-ep">—</span></div>
+            <div class="cb-row"><span class="cb-k">LOGIN ID</span><span class="cb-v" id="cs-login">—</span></div>
+            <div class="cb-row"><span class="cb-k">TIPO</span><span class="cb-v" id="cs-type">—</span></div>
+            <div class="cb-row"><span class="cb-k">MOEDA</span><span class="cb-v" id="cs-cur">—</span></div>
+            <div class="cb-row"><span class="cb-k">SALDO</span><span class="cb-v" id="cs-bal">—</span></div>
+            <div class="cb-row"><span class="cb-k">TENTATIVAS</span><span class="cb-v" id="cs-retry">0</span></div>
+            <div class="cb-row"><span class="cb-k">LATÊNCIA</span><span class="cb-v" id="cs-latency">—</span></div>
+          </div>
+          <div id="acc-list-wrap" style="display:none;margin-top:7px">
+            <div style="font-size:7px;color:var(--t3);letter-spacing:1.5px;margin-bottom:5px">CONTAS DISPONÍVEIS</div>
+            <div id="acc-list"></div>
+          </div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">ADAPTIVE REGIME MONITOR</div>
+          <div class="regime-panel">
+            <div class="rp-row"><span class="rp-k">REGIME ATUAL</span><span class="rp-v" id="rm-cur" style="color:var(--yellow)">—</span></div>
+            <div class="rp-row"><span class="rp-k">CONFIRMAÇÃO</span><span class="rp-v" id="rm-conf" style="color:var(--t2)">—</span></div>
+            <div class="rp-row"><span class="rp-k">VOL. RATIO</span><span class="rp-v" id="rm-vr" style="color:var(--t2)">—</span></div>
+            <div class="rp-row"><span class="rp-k">THRESHOLD ENS</span><span class="rp-v" id="rm-th" style="color:var(--cyan)">—</span></div>
+            <div class="rp-row"><span class="rp-k">MTF CONFLUÊNCIA</span><span class="rp-v" id="rm-mtf" style="color:var(--t2)">—</span></div>
+            <div class="rp-row"><span class="rp-k">COOLDOWN</span><span class="rp-v" id="rm-cd" style="color:var(--t2)">OK</span></div>
+          </div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">FILTROS EAM 2.1</div>
+          <div class="filt-row"><input type="checkbox" id="filtro-ema200" checked onchange="syncFilters()"><span class="filt-label">EMA 200 Alinhamento</span><span class="filt-badge on" id="fb-ema200">TREND</span></div>
+          <div class="filt-row"><input type="checkbox" id="filtro-volumeProfile" checked onchange="syncFilters()"><span class="filt-label">Volume Profile S/R</span><span class="filt-badge on" id="fb-vol">ZONE</span></div>
+          <div class="filt-row"><input type="checkbox" id="filtro-session" onchange="syncFilters()"><span class="filt-label">Sessão Horária UTC</span><span class="filt-badge off" id="fb-sess">TIME</span></div>
+          <div class="filt-row"><input type="checkbox" id="filtro-candleConfirm" onchange="syncFilters()"><span class="filt-label">Confirmação Candle</span><span class="filt-badge off" id="fb-cc">CONF</span></div>
+          <div class="filt-row"><input type="checkbox" id="filtro-accumulation" checked onchange="syncFilters()"><span class="filt-label">CMF Acumulação</span><span class="filt-badge on" id="fb-cmf">FLOW</span></div>
+          <div class="filt-row"><input type="checkbox" id="filtro-kellyDynamic" checked onchange="syncFilters()"><span class="filt-label">Kelly Dinâmico</span><span class="filt-badge on" id="fb-kd">RISK</span></div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">AUTO-TRADE</div>
+          <button class="btn" id="btn-auto" onclick="toggleAuto()" style="margin-bottom:5px">▶ INICIAR AUTO-TRADE</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;padding:4px 6px;background:var(--b1);border-radius:4px;min-height:20px">
+            <span id="led-auto" class="led led-off"></span>
+            <span id="auto-status-txt" style="font-size:8px;color:var(--t3);flex:1">AUTO OFF</span>
+          </div>
+          <div class="g2" style="margin-bottom:5px">
+            <button class="btn prim" onclick="manualTrade('CALL')">▲ CALL</button>
+            <button class="btn dang" onclick="manualTrade('PUT')">▼ PUT</button>
+          </div>
+          <button class="btn dang" onclick="emergStop()">⏹ EMERGENCY STOP</button>
+        </div>
+
+        <div class="sb-sec" id="fimathe-panel">
+          <div class="sb-hdr">🟠 FIMATHE PCM — CICLOS DE PREÇO</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            <button class="btn sm" id="btn-fimathe-toggle" onclick="toggleFimathe()" style="border-color:var(--amber,#f59e0b);color:var(--amber,#f59e0b);font-size:8px">🟠 FIMATHE ON</button>
+            <span id="fm-status" style="font-size:7.5px;color:var(--t3)">Aguardando sinal C1...</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:7.5px">
+            <div style="color:var(--t3)">Canal C1</div><div id="fm-channel" style="color:var(--cyan)">—</div>
+            <div style="color:var(--t3)">Zona Neutra</div><div id="fm-neutral" style="color:var(--yellow)">—</div>
+            <div style="color:var(--t3)">C1 Sinal</div><div id="fm-dir" style="font-weight:bold;color:var(--green)">WAIT</div>
+            <div style="color:var(--t3)">Score FIMATHE</div><div id="fm-score">—</div>
+            <div style="color:var(--t3)">Canal Fatiado</div><div id="fm-split" style="color:var(--t3)">Não</div>
+            <div style="color:var(--t3)">Sessão Ativa</div><div id="fm-session" style="color:var(--green)">—</div>
+          </div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">KELLY V21 — VOLATILITY-ADJUSTED</div>
+          <div class="kelly-panel">
+            <div class="kelly-row"><span class="kelly-k">Kelly Fraction</span><span class="kelly-v" id="v21-kelly-f" style="color:var(--green)">—</span></div>
+            <div class="kelly-row"><span class="kelly-k">Vol Ratio (ATR)</span><span class="kelly-v" id="v21-vol-r" style="color:var(--yellow)">—</span></div>
+            <div class="kelly-row"><span class="kelly-k">Stake Calculado</span><span class="kelly-v" id="v21-stake-c" style="color:var(--cyan)">—</span></div>
+            <div class="kelly-row"><span class="kelly-k">Asset IQ</span><span class="kelly-v" id="v21-aiq" style="color:var(--purple)">—</span></div>
+            <div class="kelly-row"><span class="kelly-k">TP Diário (+30%)</span><span class="kelly-v" id="v21-tp" style="color:var(--green)">—</span></div>
+            <div class="kelly-row"><span class="kelly-k">SL Diário (-20%)</span><span class="kelly-v" id="v21-sl" style="color:var(--red)">—</span></div>
+          </div>
+          <div class="recovery-panel" id="recovery-panel">
+            <div class="recovery-title">⚡ SMART RECOVERY ATIVO</div>
+            <div class="recovery-sig" id="recovery-sig">—</div>
+            <div style="font-size:7px;color:var(--green);margin-top:3px" id="recovery-wr">WR: —</div>
+          </div>
+          <div class="hedge-panel" id="hedge-panel">
+            <div class="hedge-title">🛡️ AUTO-HEDGE ATIVO</div>
+            <div class="hedge-row"><span style="color:var(--t3);font-size:7px">Par Inverso</span><span id="hedge-pair" style="font-size:7.5px;color:var(--green)">—</span></div>
+            <div class="hedge-row"><span style="color:var(--t3);font-size:7px">Tamanho Hedge</span><span id="hedge-size" style="font-size:7.5px;color:var(--green)">—</span></div>
+            <div class="hedge-row"><span style="color:var(--t3);font-size:7px">Correlação</span><span id="hedge-corr" style="font-size:7.5px;color:var(--yellow)">—</span></div>
+          </div>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">SENTIMENTO GLOBAL V21</div>
+          <div class="sent-gauge">
+            <div style="font-family:var(--hud);font-size:24px;font-weight:900;line-height:1" id="sent-score-big">—</div>
+            <div style="font-size:7px;color:var(--t3);letter-spacing:2px;margin-top:2px" id="sent-label-big">AGUARDANDO</div>
+          </div>
+          <div style="height:4px;background:var(--bg3);overflow:hidden;margin-bottom:5px;border:1px solid var(--b1)">
+            <div id="sent-bar" style="height:100%;width:50%;background:var(--yellow);transition:width .5s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:6.5px;color:var(--t3);margin-bottom:5px">
+            <span>BEARISH 0</span><span>NEUTRO 0.5</span><span>1 BULLISH</span>
+          </div>
+          <button class="btn info" onclick="fetchSentiment()" style="font-size:8px">🔄 ATUALIZAR SENTIMENTO</button>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">FILTRO NOTÍCIAS (TOURO 3)</div>
+          <div id="news-block-status" style="font-size:8px;color:var(--green);padding:4px 0;letter-spacing:1px">✓ MERCADO LIVRE</div>
+          <div id="news-list" style="max-height:90px;overflow-y:auto"></div>
+          <button class="btn" onclick="checkNewsFilter()" style="margin-top:5px;font-size:7.5px;border-color:var(--orange);color:var(--orange)">📰 VERIFICAR NOTÍCIAS</button>
+        </div>
+
+        <div class="sb-sec">
+          <div class="sb-hdr">BACKTEST + WALK-FORWARD</div>
+          <div class="irow"><div class="lbl">ATIVO</div>
+            <select class="inp" id="bt-asset">
+              <option value="EUR/USD">EUR/USD</option>
+              <option value="GBP/USD">GBP/USD</option>
+              <option value="USD/JPY">USD/JPY</option>
+              <option value="AUD/USD">AUD/USD</option>
+              <option value="XAU/USD">XAU/USD (Ouro)</option>
+              <option value="XAG/USD">XAG/USD (Prata)</option>
+              <option value="BTC/USD">BTC/USD</option>
+              <option value="ETH/USD">ETH/USD</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="irow"><div class="lbl">CANDLES</div>
+            <select class="inp" id="bt-cnt">
+              <option value="500">500</option>
+              <option value="1000" selected>1000</option>
+              <option value="2000">2000</option>
+              <option value="5000">5000</option>
+            </select>
+          </div>
+          <div class="irow"><div class="lbl">INTERVALO</div>
+            <select class="inp" id="bt-iv">
+              <option value="1min" selected>1min</option>
+              <option value="5min">5min</option>
+              <option value="15min">15min</option>
+              <option value="1h">1h</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn info" onclick="runBt()">🔬 EXECUTAR + WALK-FORWARD</button>
+      </div>
+    </div><!-- /sidebar -->
+
+    <!-- ═══ CONTENT ═══ -->
+    <div id="content">
+
+      <!-- ABA: ANALYZER -->
+      <div class="page on" id="pa">
+        <div class="pa-main">
+          <div id="chart-wrap">
+            <canvas id="chart-canvas"></canvas>
+            <div class="chart-ov">
+              <div class="ohlc">
+                <span><span class="ohlc-l">O</span><span id="co-o">--</span></span>
+                <span><span class="ohlc-l">H</span><span id="co-h">--</span></span>
+                <span><span class="ohlc-l">L</span><span id="co-l">--</span></span>
+                <span><span class="ohlc-l">C</span><span id="co-c">--</span></span>
+              </div>
+              <div class="reg-tag RG" id="reg-tag">RANGING</div>
+              <div style="font-size:7px;color:var(--blue);background:var(--bg3);padding:2px 7px;border:1px solid var(--b1)">● TWELVEDATA</div>
+            </div>
+            <div class="mtf-badge">
+              <span style="font-size:7px;color:var(--t3);letter-spacing:1px">MTF:</span>
+              <div class="mtf-pill off" id="mtf-m1">M1 --</div>
+              <div class="mtf-pill off" id="mtf-m5">M5 --</div>
+              <div class="mtf-pill off" id="mtf-h1">H1 --</div>
+            </div>
+            <div class="tf-btns">
+              <div class="tf-btn on" data-iv="1min" onclick="changeTF(this)">M1</div>
+              <div class="tf-btn" data-iv="5min" onclick="changeTF(this)">M5</div>
+              <div class="tf-btn" data-iv="15min" onclick="changeTF(this)">M15</div>
+              <div class="tf-btn" data-iv="1h" onclick="changeTF(this)">H1</div>
+            </div>
+          </div>
+          <div id="ind-row">
+            <div class="ind"><div class="ind-n">RSI (14)</div><div class="ind-v" id="i-rsi">--</div><div class="ind-bar"><div class="ind-fill" id="ib-rsi" style="width:50%;background:var(--blue)"></div></div><div class="ind-sub" id="is-rsi">--</div></div>
+            <div class="ind"><div class="ind-n">MACD (12,26,9)</div><div class="ind-v" id="i-macd">--</div><div class="ind-bar"><div class="ind-fill" id="ib-macd" style="width:50%;background:var(--blue)"></div></div><div class="ind-sub" id="is-macd">--</div></div>
+            <div class="ind"><div class="ind-n">STOCH (14,3)</div><div class="ind-v" id="i-stoch">--</div><div class="ind-bar"><div class="ind-fill" id="ib-stoch" style="width:50%;background:var(--yellow)"></div></div><div class="ind-sub" id="is-stoch">--</div></div>
+            <div class="ind"><div class="ind-n">MFI (14)</div><div class="ind-v" id="i-mfi">--</div><div class="ind-bar"><div class="ind-fill" id="ib-mfi" style="width:50%;background:var(--purple)"></div></div><div class="ind-sub" id="is-mfi">--</div></div>
+            <div class="ind"><div class="ind-n">ATR (14)</div><div class="ind-v" id="i-atr">--</div><div class="ind-bar"><div class="ind-fill" id="ib-atr" style="width:30%;background:var(--orange)"></div></div><div class="ind-sub" id="is-atr">--</div></div>
+            <div class="ind"><div class="ind-n">BB% (20,2)</div><div class="ind-v" id="i-bb">--</div><div class="ind-bar"><div class="ind-fill" id="ib-bb" style="width:50%;background:var(--cyan)"></div></div><div class="ind-sub" id="is-bb">--</div></div>
+          </div>
+          <div id="sig-bar">
+            <div class="sig-main">
+              <div class="sig-dir WAIT" id="sig-dir">AGUARD</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+                <span style="font-size:8px;color:var(--t3);letter-spacing:1px">CONFIANÇA</span>
+                <div style="flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden"><div id="sig-confidence-bar" style="height:100%;width:0%;transition:width .4s,background .3s"></div></div>
+                <span id="sig-confidence-score" style="font-size:10px;font-family:var(--hud);min-width:36px;text-align:right;color:var(--t3)">—</span>
+              </div>
+              <div class="sig-meta">
+                <div><b id="sig-sym">--</b> <span id="sig-tf">M1</span></div>
+                <div id="sig-reject-reason" style="font-size:8px;color:var(--red);margin-top:2px;display:none;max-width:240px;line-height:1.4;white-space:normal"></div>
+                <div>REGIME: <b id="sig-reg">--</b></div>
+                <div>CONF: <b id="sig-conf">0%</b></div>
+              </div>
+            </div>
+            <div class="sig-scores">
+              <div class="sc"><div class="sc-l">ENSEMBLE</div><div class="sc-bar"><div class="sc-fill" id="sc-ens" style="width:0%;background:var(--green)"></div></div><div class="sc-v" id="sv-ens">0.000</div></div>
+              <div class="sc"><div class="sc-l">TREND</div><div class="sc-bar"><div class="sc-fill" id="sc-tr" style="width:0%;background:var(--blue)"></div></div><div class="sc-v" id="sv-tr">0.000</div></div>
+              <div class="sc"><div class="sc-l">MOMENTUM</div><div class="sc-bar"><div class="sc-fill" id="sc-mo" style="width:0%;background:var(--yellow)"></div></div><div class="sc-v" id="sv-mo">0.000</div></div>
+              <div class="sc"><div class="sc-l">PRICE ACT</div><div class="sc-bar"><div class="sc-fill" id="sc-pa" style="width:0%;background:var(--cyan)"></div></div><div class="sc-v" id="sv-pa">0.000</div></div>
+              <div class="sc"><div class="sc-l">MTF SCORE</div><div class="sc-bar"><div class="sc-fill" id="sc-mtf" style="width:50%;background:var(--purple)"></div></div><div class="sc-v" id="sv-mtf">0.000</div></div>
+              <div class="sc"><div class="sc-l">WIN RATE</div><div class="sc-bar"><div class="sc-fill" id="sc-wr" style="width:50%;background:var(--green)"></div></div><div class="sc-v" id="sv-wr">0%</div></div>
+            </div>
+            <div class="sig-btns">
+              <button class="btn prim" onclick="manualTrade('CALL')">▲ CALL</button>
+              <button class="btn dang" onclick="manualTrade('PUT')">▼ PUT</button>
+              <button class="btn warn" onclick="emergStop()" title="Emergency Stop">⏹</button>
+            </div>
+          </div>
+        </div>
+        <div class="pa-right">
+          <div class="rp-hdr" style="color:var(--orange);border-color:var(--orange)">TRADES ATIVOS (V21)</div>
+          <div class="tr-list" id="active-trades-list" style="margin-bottom:15px;border-color:var(--orange);min-height:40px">
+            <div style="font-size:7px;color:var(--t3);padding:10px;text-align:center">Nenhum trade ativo no momento</div>
+          </div>
+          <div class="rp-hdr">HISTÓRICO DE TRADES</div>
+          <div class="tr-list" id="tr-list"></div>
+          <div class="ms-grid">
+            <div class="ms"><div class="ms-v" id="ms-bal" style="color:var(--green)">$--</div><div class="ms-l">SALDO</div></div>
+            <div class="ms"><div class="ms-v" id="ms-pnl" style="color:var(--t1)">0%</div><div class="ms-l">PnL DIA</div></div>
+            <div class="ms"><div class="ms-v" id="ms-wr" style="color:var(--blue)">0%</div><div class="ms-l">WIN RATE</div></div>
+            <div class="ms"><div class="ms-v" id="ms-tot" style="color:var(--t1)">0</div><div class="ms-l">TRADES</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: DASHBOARD -->
+      <div class="page" id="pd">
+        <div class="d4">
+          <div class="d-c"><div class="d-ct">SALDO LIVE</div><div class="d-big" id="d-bal" style="color:var(--green)">$--</div><div class="d-sub" id="d-pnl">PnL: --</div></div>
+          <div class="d-c"><div class="d-ct">DRAWDOWN MÁX</div><div class="d-big" id="d-dd" style="color:var(--red)">0.00%</div><div class="d-sub">Desde início sessão</div></div>
+          <div class="d-c"><div class="d-ct">WIN RATE</div><div class="d-big" id="d-wr" style="color:var(--blue)">0%</div><div class="d-sub" id="d-wl">W:0 / L:0</div></div>
+          <div class="d-c"><div class="d-ct">TOTAL TRADES</div><div class="d-big" id="d-tot" style="color:var(--t1)">0</div><div class="d-sub" id="d-strk">Streak: --</div></div>
+        </div>
+        <div class="d-2" style="flex:1">
+          <div style="background:var(--panel);padding:14px"><div class="d-ct">EQUITY CURVE</div><canvas id="eq-cv" style="width:100%;height:190px;display:block"></canvas></div>
+          <div style="background:var(--panel);padding:14px">
+            <div class="d-ct">RISK ENGINE STATE</div>
+            <div class="rb rb-A" id="d-rb"><span class="led led-on"></span>ACTIVE</div>
+            <div class="kv"><span class="kv-k">Regime Atual</span><span class="kv-v" id="d-regime">—</span></div>
+            <div class="kv"><span class="kv-k">Threshold Ensemble</span><span class="kv-v y" id="d-threshold">—</span></div>
+            <div class="kv"><span class="kv-k">VIX Local</span><span class="kv-v" id="d-vix">—</span></div>
+            <div class="kv"><span class="kv-k">Kelly Fraction</span><span class="kv-v g" id="d-kelly">—</span></div>
+            <div class="kv"><span class="kv-k">Próx. Stake</span><span class="kv-v y" id="d-stake">—</span></div>
+            <div class="kv"><span class="kv-k">Win Streak</span><span class="kv-v g" id="d-ws">0</span></div>
+            <div class="kv"><span class="kv-k">Loss Streak</span><span class="kv-v r" id="d-ls">0</span></div>
+            <div class="kv"><span class="kv-k">Trailing Stop</span><span class="kv-v" id="d-trail">INATIVO</span></div>
+            <div class="kv"><span class="kv-k">Trail ATR</span><span class="kv-v" id="d-trail-atr" style="color:var(--t3)">—</span></div>
+            <div id="ks-countdown" style="font-size:8px;color:var(--red);padding:2px 4px;margin:2px 0;min-height:12px"></div>
+            <div class="kv"><span class="kv-k">SoroGale</span><span class="kv-v" id="d-sg">—</span></div>
+            <div class="kv"><span class="kv-k">MTF Confluência</span><span class="kv-v" id="d-mtf">—</span></div>
+            <div class="kv"><span class="kv-k">Cooldown Restante</span><span class="kv-v" id="d-cd">OK</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: BRAIN V21 -->
+      <div class="page" id="pbrain">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--b1);background:var(--bg2);display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <span style="font-size:8px;color:var(--t2);letter-spacing:1px">🧠 BRAIN ENGINE V21 — ASSET IQ · HOUR INTELLIGENCE · BLACKLIST · MONTE CARLO · SHAP</span>
+          <button class="btn sm" onclick="runBrainAnalysis()" style="border-color:var(--cyan);color:var(--cyan);width:auto;padding:5px 13px">▶ ANALISAR</button>
+          <button class="btn sm" onclick="runMonteCarloStress()" style="border-color:var(--purple);color:var(--purple);width:auto;padding:5px 13px">🎲 MONTE CARLO</button>
+        </div>
+        <div class="brain-grid" style="min-height:0;">
+          <div class="brain-card"><div class="bc-title">ASSET IQ EXPONENCIAL</div><div id="aiq-list" style="max-height:180px;overflow-y:auto;"><div style="font-size:8px;color:var(--t3);padding:20px;text-align:center">Execute ANALISAR para carregar</div></div></div>
+          <div class="brain-card">
+            <div class="bc-title">CLUSTERS DE REGIME (K-MEANS)</div>
+            <div id="cluster-display" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+              <div style="background:var(--g3);border:1px solid var(--green);padding:7px;text-align:center"><div style="font-family:var(--hud);font-size:13px;color:var(--green)" id="cl-0">0</div><div style="font-size:6.5px;color:var(--t3)">TREND↑ STRONG</div></div>
+              <div style="background:var(--r3);border:1px solid var(--red);padding:7px;text-align:center"><div style="font-family:var(--hud);font-size:13px;color:var(--red)" id="cl-1">0</div><div style="font-size:6.5px;color:var(--t3)">TREND↓ STRONG</div></div>
+              <div style="background:#1a1200;border:1px solid var(--yellow);padding:7px;text-align:center"><div style="font-family:var(--hud);font-size:13px;color:var(--yellow)" id="cl-2">0</div><div style="font-size:6.5px;color:var(--t3)">LATERAL CALMO</div></div>
+              <div style="background:#1a0900;border:1px solid var(--orange);padding:7px;text-align:center"><div style="font-family:var(--hud);font-size:13px;color:var(--orange)" id="cl-3">0</div><div style="font-size:6.5px;color:var(--t3)">LATERAL VOLÁTIL</div></div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--b1);padding:6px 8px;">
+              <div style="font-size:7px;color:var(--t3);letter-spacing:1px;margin-bottom:3px">CLUSTER ATUAL</div>
+              <div style="font-family:var(--hud);font-size:13px" id="cl-current">—</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:2px" id="cl-wr">Win Rate neste cluster: —</div>
+            </div>
+          </div>
+          <div class="brain-card">
+            <div class="bc-title">SENTIMENTO & NOTÍCIAS</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <div style="font-family:var(--hud);font-size:32px;font-weight:900" id="brain-sent-big">—</div>
+              <div><div style="font-size:7px;letter-spacing:1.5px;color:var(--t3)">ÍNDICE GLOBAL</div><div style="font-size:8px;margin-top:2px" id="brain-sent-status">—</div></div>
+            </div>
+            <div style="height:3px;background:var(--bg3);overflow:hidden;margin-bottom:8px;border:1px solid var(--b1)"><div id="brain-sent-bar" style="height:100%;width:50%;background:var(--yellow);transition:width .5s"></div></div>
+            <div style="font-size:7px;color:var(--t3);letter-spacing:1.5px;margin-bottom:4px">NOTÍCIAS RECENTES</div>
+            <div id="brain-news-list" style="max-height:90px;overflow-y:auto;font-size:7.5px;color:var(--t2)"><div style="padding:6px;color:var(--t3)">Clique ANALISAR para carregar</div></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b1);flex:1;min-height:0;overflow:hidden">
+          <div style="background:var(--panel);padding:12px;overflow-y:auto;">
+            <div class="bc-title" style="margin-bottom:6px">INTELIGÊNCIA DE HORÁRIO (UTC)</div>
+            <div class="hour-grid" id="hour-grid-am" style="margin-bottom:2px"></div>
+            <div class="hour-grid" id="hour-grid-pm"></div>
+            <div style="display:flex;gap:16px;margin-top:6px;font-size:7px;color:var(--t3)"><span>🕐 0h–11h · 12h–23h</span><span id="hour-current-status" style="color:var(--green)">—</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+            <div style="background:var(--panel);padding:12px;border-bottom:1px solid var(--b1);flex-shrink:0;">
+              <div class="bc-title">MONTE CARLO STRESS TEST (2.000 CAMINHOS)</div>
+              <div id="mc-result-panel"><div style="font-size:8px;color:var(--t3);padding:6px 0">Clique "MONTE CARLO" para executar</div></div>
+            </div>
+            <div style="background:var(--panel);padding:12px;border-bottom:1px solid var(--b1);flex-shrink:0;">
+              <div class="bc-title">EXPLICABILIDADE (SHAP) — ÚLTIMO SINAL</div>
+              <div id="shap-panel"><div style="font-size:8px;color:var(--t3);padding:4px 0">Aguardando sinal aprovado...</div></div>
+            </div>
+            <div style="background:var(--panel);padding:12px;flex:1;overflow-y:auto;">
+              <div class="bc-title">AUTO-BLACKLIST (TESTE BINOMIAL)</div>
+              <div id="blacklist-panel"><div style="font-size:8px;color:var(--t3);padding:4px 0">Nenhum ativo em quarentena</div></div>
+              <div style="margin-top:8px"><div style="font-size:7px;color:var(--t3);letter-spacing:1.5px;margin-bottom:4px">TRADE HISTORY (últimos 20)</div><div id="brain-trade-hist" style="font-size:7.5px;color:var(--t2);max-height:80px;overflow-y:auto"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: BACKTEST -->
+      <div class="page" id="pb">
+        <div class="bt-hdr">
+          <span style="font-size:8px;color:var(--t2);letter-spacing:1px">BACKTEST REAL · WALK-FORWARD · SLIPPAGE MODEL · IS 70% + OOS 30%</span>
+          <div id="bt-prog" style="font-size:8px;color:var(--yellow);margin-left:auto"></div>
+          <button class="btn" onclick="runBt()" style="width:auto;padding:5px 13px;font-size:8px;border-color:var(--blue);color:var(--blue)">▶ EXECUTAR</button>
+          <button class="btn" onclick="exportBt()" style="width:auto;padding:5px 13px;font-size:8px;border-color:var(--green);color:var(--green)">⬇ CSV</button>
+        </div>
+        <div class="bt-g">
+          <div class="bt-c"><div class="bt-ct">PROFIT FACTOR</div><div class="bt-v" id="bt-pf" style="color:var(--green)">--</div><div class="bt-l">Meta ≥ 1.6</div></div>
+          <div class="bt-c"><div class="bt-ct">WIN RATE</div><div class="bt-v" id="bt-wr" style="color:var(--blue)">--</div><div class="bt-l">Meta ≥ 60%</div></div>
+          <div class="bt-c"><div class="bt-ct">TOTAL TRADES</div><div class="bt-v" id="bt-tot" style="color:var(--t1)">--</div><div class="bt-l">Com filtros ativos</div></div>
+          <div class="bt-c"><div class="bt-ct">PnL TOTAL</div><div class="bt-v" id="bt-pnl" style="color:var(--green)">--</div><div class="bt-l">Stake $10 fixo</div></div>
+          <div class="bt-c"><div class="bt-ct">MAX DRAWDOWN</div><div class="bt-v" id="bt-dd" style="color:var(--red)">--</div><div class="bt-l">Perda máxima</div></div>
+        </div>
+        <div class="bt-g" style="margin-top:1px">
+          <div class="bt-c"><div class="bt-ct">SHARPE RATIO</div><div class="bt-v" id="bt-sr" style="color:var(--yellow)">--</div><div class="bt-l">Meta ≥ 1.0</div></div>
+          <div class="bt-c"><div class="bt-ct">EXPECTÂNCIA</div><div class="bt-v" id="bt-ex" style="color:var(--cyan)">--</div><div class="bt-l">Por trade ($)</div></div>
+          <div class="bt-c"><div class="bt-ct">W-STREAK MÁX</div><div class="bt-v" id="bt-ws" style="color:var(--green)">--</div><div class="bt-l">Wins seguidos</div></div>
+          <div class="bt-c"><div class="bt-ct">L-STREAK MÁX</div><div class="bt-v" id="bt-ls" style="color:var(--red)">--</div><div class="bt-l">Losses seguidos</div></div>
+          <div class="bt-c"><div class="bt-ct">PERÍODO</div><div class="bt-v" id="bt-per" style="color:var(--t1);font-size:12px">--</div><div class="bt-l" id="bt-candles">-- candles reais</div></div>
+        </div>
+        <div class="bt-wrap">
+          <div id="bt-cutoff-msg" style="font-size:9px;padding:6px 0;letter-spacing:0.5px;font-weight:bold"></div>
+          <div id="bt-msg" style="font-size:9px;color:var(--yellow);padding:8px 0;letter-spacing:1px">Clique em "Executar" — Backtest real com Walk-Forward Validation + Slippage Model.</div>
+          <div id="wf-section" style="display:none;margin-bottom:14px">
+            <div style="font-size:7.5px;letter-spacing:2px;color:var(--t3);margin-bottom:8px">WALK-FORWARD VALIDATION — ANTI-OVERFITTING</div>
+            <div class="wf-grid">
+              <div class="wf-c"><div class="wf-ct">IN-SAMPLE (70%)</div><div class="wf-v" id="wf-is-wr" style="color:var(--blue)">--</div><div class="wf-label">Win Rate IS</div></div>
+              <div class="wf-c"><div class="wf-ct">OUT-OF-SAMPLE (30%)</div><div class="wf-v" id="wf-oos-wr" style="color:var(--yellow)">--</div><div class="wf-label">Win Rate OOS</div></div>
+              <div class="wf-c"><div class="wf-ct">DEGRADAÇÃO</div><div class="wf-v" id="wf-deg" style="color:var(--t1)">--</div><div class="wf-label">&lt;10% = robusto</div></div>
+              <div class="wf-c"><div class="wf-ct">IS PnL</div><div class="wf-v" id="wf-is-pnl" style="color:var(--green)">--</div><div class="wf-label">In-Sample $</div></div>
+              <div class="wf-c"><div class="wf-ct">OOS PnL</div><div class="wf-v" id="wf-oos-pnl" style="color:var(--yellow)">--</div><div class="wf-label">Out-of-Sample $</div></div>
+              <div class="wf-c"><div class="wf-ct">VEREDITO</div><div class="wf-v" id="wf-verdict" style="font-size:10px">--</div><div class="wf-label">Robustez</div></div>
+            </div>
+          </div>
+          <table id="bt-table" style="display:none">
+            <thead><tr><th>#</th><th>DATA</th><th>DIR</th><th>ENS</th><th>TR</th><th>MO</th><th>MTF</th><th>REG</th><th>RESULTADO</th><th>P&L</th><th>SALDO</th></tr></thead>
+            <tbody id="bt-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ABA: OTIMIZADOR -->
+      <div class="page" id="po">
+        <div class="opt-hdr">
+          <span style="font-size:8px;color:var(--t2);letter-spacing:1px">OTIMIZADOR — GRID SEARCH · ALGORITMO GENÉTICO · ANTI-OVERFITTING</span>
+          <button class="btn sm prim" id="btn-opt-start" onclick="startOptimization()">▶ INICIAR</button>
+          <button class="btn sm" id="btn-genetic-start" onclick="startGeneticOptimization()">🧬 GENÉTICO</button>
+          <button class="btn sm dang" id="btn-opt-stop" onclick="stopOptimization()" style="display:none">■ PARAR</button>
+          <button class="btn sm" onclick="applyBestParams()" style="border-color:var(--cyan);color:var(--cyan)">✓ APLICAR MELHOR</button>
+          <button class="btn sm" onclick="exportOptResults()" style="border-color:var(--green);color:var(--green)">⬇ CSV</button>
+          <span id="opt-prog-txt" style="font-size:7.5px;color:var(--yellow);margin-left:auto">0/0</span>
+        </div>
+        <div class="opt-body">
+          <div>
+            <div class="opt-panel" style="margin-bottom:10px">
+              <div class="opt-label">PARÂMETROS A VARIAR</div>
+              <div class="opt-param-row"><input type="checkbox" id="opt-rsi" checked><span class="opt-param-name">RSI Period</span><input class="inp" id="opt-rsi-min" value="10" type="number" min="5" max="30"><input class="inp" id="opt-rsi-max" value="20" type="number" min="5" max="30"><input class="inp" id="opt-rsi-step" value="2" type="number" min="1" max="5"></div>
+              <div class="opt-param-row"><input type="checkbox" id="opt-macd-fast" checked><span class="opt-param-name">MACD Fast</span><input class="inp" id="opt-macd-fast-min" value="8" type="number"><input class="inp" id="opt-macd-fast-max" value="16" type="number"><input class="inp" id="opt-macd-fast-step" value="2" type="number"></div>
+              <div class="opt-param-row"><input type="checkbox" id="opt-ens-min"><span class="opt-param-name">Ensemble Min</span><input class="inp" id="opt-ens-min-min" value="0.55" type="number" step="0.05"><input class="inp" id="opt-ens-min-max" value="0.70" type="number" step="0.05"><input class="inp" id="opt-ens-min-step" value="0.05" type="number" step="0.01"></div>
+              <div class="opt-param-row"><input type="checkbox" id="opt-stoch-k"><span class="opt-param-name">Stoch K</span><input class="inp" id="opt-stoch-k-min" value="9" type="number" min="5" max="30"><input class="inp" id="opt-stoch-k-max" value="21" type="number" min="5" max="30"><input class="inp" id="opt-stoch-k-step" value="3" type="number" min="1" max="5"></div>
+              <div class="opt-param-row"><input type="checkbox" id="opt-rsi-ob"><span class="opt-param-name">RSI OB Level</span><input class="inp" id="opt-rsi-ob-min" value="65" type="number" min="55" max="80"><input class="inp" id="opt-rsi-ob-max" value="80" type="number" min="55" max="80"><input class="inp" id="opt-rsi-ob-step" value="5" type="number" min="1" max="10"></div>
+            </div>
+            <div class="opt-panel">
+              <div class="opt-label">CONFIGURAÇÃO</div>
+              <div class="irow"><div class="lbl">INTERVALO</div><select class="inp" id="opt-iv"><option value="1min" selected>1min</option><option value="5min">5min</option></select></div>
+              <div class="irow"><div class="lbl">CANDLES</div><select class="inp" id="opt-candles"><option value="500">500</option><option value="1000" selected>1000</option><option value="2000">2000</option></select></div>
+              <div class="irow"><div class="lbl">MAX COMBINAÇÕES</div><input class="inp" id="opt-max-comb" value="150" type="number"></div>
+              <div class="irow"><div class="lbl">MÉTRICA PRINCIPAL</div>
+                <select class="inp" id="opt-metric">
+                  <option value="pf" selected>Profit Factor</option><option value="wr">Win Rate</option>
+                  <option value="sharpe">Sharpe</option><option value="sortino">Sortino</option>
+                  <option value="calmar">Calmar</option><option value="pnl">PnL</option>
+                </select>
+              </div>
+              <div class="irow"><div class="lbl">DD MÁX PERMITIDO %</div><input class="inp" id="opt-dd-limit" value="100" type="number" min="1" max="100"></div>
+              <div class="opt-progress"><div class="opt-prog-fill" id="opt-prog-fill"></div></div>
+              <div class="opt-log" id="opt-log">Aguardando início...</div>
+              <div id="opt-summary" style="font-size:9px;color:var(--t2);margin-top:4px;padding:4px;background:var(--bg2);border-radius:4px"></div>
+            </div>
+          </div>
+          <div class="opt-panel" style="overflow-y:auto">
+            <div class="opt-label">TOP COMBINAÇÕES — ORDENADO POR MÉTRICA</div>
+            <table>
+              <thead><tr><th>#</th><th>PARÂMETROS</th><th>PF</th><th>WR%</th><th>SHARPE</th><th>SORTINO</th><th>CALMAR</th><th>PnL</th><th>TRADES</th><th>DD%</th></tr></thead>
+              <tbody id="opt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: PARÂMETROS -->
+      <div class="page" id="pp">
+        <div class="pp-body">
+          <div class="pp-panel">
+            <div class="pp-title">INDICADORES</div>
+            <div class="irow"><div class="lbl">RSI Period</div><input class="inp" id="param-rsi" value="14" type="number" min="5" max="30"></div>
+            <div class="irow"><div class="lbl">MACD Fast</div><input class="inp" id="param-macd-fast" value="12" type="number"></div>
+            <div class="irow"><div class="lbl">MACD Slow</div><input class="inp" id="param-macd-slow" value="26" type="number"></div>
+            <div class="irow"><div class="lbl">MACD Signal</div><input class="inp" id="param-macd-signal" value="9" type="number"></div>
+            <div class="irow"><div class="lbl">Stoch K Period</div><input class="inp" id="param-stoch-k" value="14" type="number"></div>
+            <div class="irow"><div class="lbl">Stoch D Period</div><input class="inp" id="param-stoch-d" value="3" type="number"></div>
+            <div class="irow"><div class="lbl">EMA 200 Period</div><input class="inp" id="param-ema200" value="200" type="number"></div>
+            <div class="irow"><div class="lbl">CMF Period</div><input class="inp" id="param-cmf" value="21" type="number"></div>
+          </div>
+          <div class="pp-panel">
+            <div class="pp-title">THRESHOLDS DE SINAL</div>
+            <div class="irow"><div class="lbl">Ensemble Mínimo</div><input class="inp" id="param-ens-min" value="0.60" type="number" step="0.05"></div>
+            <div class="irow"><div class="lbl">Trend Mínimo</div><input class="inp" id="param-trend-min" value="0.55" type="number" step="0.05"></div>
+            <div class="irow"><div class="lbl">RSI Overbought</div><input class="inp" id="param-rsi-ob" value="70" type="number"></div>
+            <div class="irow"><div class="lbl">RSI Oversold</div><input class="inp" id="param-rsi-os" value="30" type="number"></div>
+            <div class="irow"><div class="lbl">Stoch Overbought</div><input class="inp" id="param-stoch-ob" value="80" type="number"></div>
+            <div class="irow"><div class="lbl">Stoch Oversold</div><input class="inp" id="param-stoch-os" value="20" type="number"></div>
+            <div class="irow"><div class="lbl">MFI Overbought</div><input class="inp" id="param-mfi-ob" value="75" type="number"></div>
+            <div class="irow"><div class="lbl">MFI Oversold</div><input class="inp" id="param-mfi-os" value="25" type="number"></div>
+          </div>
+          <div class="pp-panel">
+            <div class="pp-title">RISK MANAGEMENT</div>
+            <div class="irow"><div class="lbl">Kelly Mín %</div><input class="inp" id="param-kelly-min" value="0.5" type="number" step="0.1"></div>
+            <div class="irow"><div class="lbl">Kelly Máx %</div><input class="inp" id="param-kelly-max" value="3.0" type="number" step="0.1"></div>
+            <div class="irow"><div class="lbl">Base Stake %</div><input class="inp" id="param-base-stake" value="1.0" type="number" step="0.1"></div>
+            <div class="irow"><div class="lbl">Stake Máx % saldo</div><input class="inp" id="param-max-stake" value="2.0" type="number" step="0.1"></div>
+            <div class="irow"><div class="lbl">TP Diário %</div><input class="inp" id="param-tp" value="15" type="number"></div>
+            <div class="irow"><div class="lbl">SL Diário %</div><input class="inp" id="param-sl" value="-10" type="number"></div>
+            <div class="irow"><div class="lbl">DD Reduzir %</div><input class="inp" id="param-dd-red" value="-15" type="number"></div>
+            <div class="irow"><div class="lbl">DD Halt %</div><input class="inp" id="param-dd-halt" value="-20" type="number"></div>
+            <div class="irow"><div class="lbl">SoroGale Win</div><input class="inp" id="param-sg-win" value="3" type="number"></div>
+            <div class="irow"><div class="lbl">SoroGale Profit %</div><input class="inp" id="param-sg-pct" value="15" type="number"></div>
+            <div class="sb-hdr" style="margin-top:12px;margin-bottom:6px">⚖️ PESOS DO ENSEMBLE</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px">
+              <div class="irow"><div class="lbl">TREND</div><input class="inp" id="ew-tr" type="number" step="0.01" min="0" max="0.5" value="0.21" style="width:55px" /></div>
+              <div class="irow"><div class="lbl">MOMENTUM</div><input class="inp" id="ew-mo" type="number" step="0.01" min="0" max="0.5" value="0.27" style="width:55px" /></div>
+              <div class="irow"><div class="lbl">PRICE ACT</div><input class="inp" id="ew-pa" type="number" step="0.01" min="0" max="0.4" value="0.17" style="width:55px" /></div>
+              <div class="irow"><div class="lbl">MACD CF</div><input class="inp" id="ew-mc" type="number" step="0.01" min="0" max="0.3" value="0.10" style="width:55px" /></div>
+              <div class="irow"><div class="lbl">MTF</div><input class="inp" id="ew-mtf" type="number" step="0.01" min="0" max="0.3" value="0.14" style="width:55px" /></div>
+              <div class="irow"><div class="lbl">DIV</div><input class="inp" id="ew-div" type="number" step="0.01" min="0" max="0.2" value="0.06" style="width:55px" /></div>
+            </div>
+            <button class="btn sm" onclick="applyEnsWeights()" style="margin-top:6px;width:100%;border-color:var(--cyan);color:var(--cyan)">⚖️ APLICAR PESOS</button>
+            <div id="ew-sum" style="font-size:8px;color:var(--t3);text-align:center;margin-top:2px">Soma dos pesos: 0.95 (normalizado automaticamente)</div>
+            <div style="display:flex;gap:5px;margin-top:9px">
+              <button class="btn prim" onclick="applyParams()" style="flex:1">✓ APLICAR</button>
+              <button class="btn" onclick="saveParams()" style="flex:1;border-color:var(--cyan);color:var(--cyan)">💾 SALVAR</button>
+              <button class="btn" onclick="loadParams()" style="flex:1;border-color:var(--yellow);color:var(--yellow)">📂 CARREGAR</button>
+            </div>
+            <button class="btn dang" onclick="resetParams()" style="margin-top:5px">↺ RESETAR PADRÃO</button>
+          </div>
+          <div class="pp-panel" style="border-color:var(--cyan);background:rgba(0,255,255,0.02)">
+            <div class="pp-title" style="color:var(--cyan)">☁️ SUPABASE CLOUD SYNC</div>
+            <div style="font-size:7px;color:var(--t3);margin-bottom:8px">Sincronize histórico, Asset IQ e parâmetros na nuvem</div>
+            <div class="irow"><div class="lbl">Supabase URL</div><input class="inp" id="sb-url" value="" type="text" style="font-size:9px" placeholder="https://xxxx.supabase.co"></div>
+            <div class="irow"><div class="lbl">Supabase Key</div><input class="inp" id="sb-key" value="" type="password" style="font-size:9px" placeholder="eyJhbGciO..."></div>
+            <div style="display:flex;gap:5px;margin-top:8px">
+              <button class="btn" onclick="sbConnect()" style="flex:1;font-size:8px;border-color:var(--cyan);color:var(--cyan)">🔗 CONECTAR</button>
+              <button class="btn" onclick="sbPushAll()" style="flex:1;font-size:8px;border-color:var(--green);color:var(--green)">⬆️ SUBIR TUDO</button>
+            </div>
+            <div id="sb-status-panel" style="font-size:7px;color:var(--t3);text-align:center;margin-top:5px">Status: Desconectado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: LOGS -->
+      <div class="page" id="pl">
+        <div class="log-bar">
+          <span style="font-size:7px;color:var(--t3);letter-spacing:2px;margin-right:4px">FILTRO:</span>
+          <button class="lf on" onclick="setLF(this,'ALL')">ALL</button>
+          <button class="lf" onclick="setLF(this,'SIGNAL')">🎯 SIGNAL</button>
+          <button class="lf" onclick="setLF(this,'TRADE')">💰 TRADE</button>
+          <button class="lf" onclick="setLF(this,'REGIME')">REGIME</button>
+          <button class="lf" onclick="setLF(this,'BT')">⚗ BT</button>
+          <button class="lf" onclick="setLF(this,'INFO')">ℹ INFO</button>
+          <button class="lf" onclick="setLF(this,'WARNING')">WARN</button>
+          <button class="lf" onclick="setLF(this,'ERROR')">ERROR</button>
+          <button class="lf" style="margin-left:auto;border-color:var(--green);color:var(--green)" onclick="exportLogs()">⬇ CSV</button>
+          <button class="lf" style="border-color:var(--red);color:var(--red)" onclick="G.logs=[];renderLogs()">✕ LIMPAR</button>
+        </div>
+        <div id="log-count" style="padding:4px 10px;font-size:9px;color:var(--t3);border-bottom:1px solid var(--border);background:var(--bg2);display:flex;gap:10px;align-items:center;flex-shrink:0">
+          <span id="log-count-txt">0 entradas</span>
+          <span id="log-bt-status" style="margin-left:auto;font-size:9px"></span>
+          <span id="log-mc-status" style="font-size:9px"></span>
+        </div>
+        <div class="log-con" id="log-con"></div>
+      </div>
+
+      <!-- ABA: SUPERVISOR IA -->
+      <div class="page" id="psup">
+        <div style="padding:10px 14px;border-bottom:1px solid rgba(168,85,247,0.3);background:linear-gradient(90deg,rgba(168,85,247,0.08),transparent);display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:9px;font-family:var(--hud);color:#a855f7;letter-spacing:2px">🧬 SUPERVISOR IA — CLOUD THIN CLIENT</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);padding:3px 8px;border-radius:3px">
+              <div id="sup-ably-dot" class="led led-off"></div>
+              <span id="sup-ably-label" style="font-size:9px;color:var(--t3);white-space:nowrap;font-family:var(--mono)">ABLY: OFFLINE</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);padding:3px 8px;border-radius:3px">
+              <div id="sup-sb-dot-header" class="led led-off"></div>
+              <span id="sup-sb-label-header" style="font-size:9px;color:var(--t3);white-space:nowrap;font-family:var(--mono)">SUPABASE: OFFLINE</span>
+            </div>
+          </div>
+          <select class="inp" id="sup-mode" style="width:130px;font-size:9px;flex-shrink:0" onchange="supSetMode(this.value)">
+            <option value="conselheiro">👁 CONSELHEIRO</option>
+            <option value="copiloto">🤝 COPILOTO</option>
+            <option value="piloto_automatico">🤖 PILOTO AUTO</option>
+          </select>
+          <span id="sup-ws-label" style="display:none">OFFLINE</span>
+          <div id="sup-ws-dot" style="display:none"></div>
+          <span id="sup-backend-status" style="display:none">OFFLINE</span>
+          <input id="sup-backend-url" type="hidden" value="http://localhost:8000"/>
+        </div>
+
+        <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.35);padding:12px 14px;margin:10px;border-radius:4px;display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:var(--hud);font-size:10px;letter-spacing:2px;color:var(--cyan)">☁️ CONEXÃO SUPABASE / SUPERVISOR</span>
+            <div id="sup-sb-dot" class="led led-off" style="margin-left:auto"></div>
+            <span id="sup-sb-label" style="font-size:9px;color:var(--t3);white-space:nowrap;font-family:var(--mono)">SUPABASE: OFFLINE</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <div style="flex:1"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">SUPABASE URL</div><input class="inp" id="sb-url-main" type="text" placeholder="https://xxxx.supabase.co" style="font-size:10px;width:100%"></div>
+            <div style="flex:1"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">API KEY (anon/service)</div><input class="inp" id="sb-key-main" type="password" placeholder="eyJhbGciO..." style="font-size:10px;width:100%"></div>
+          </div>
+          <div style="margin-top:2px">
+            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">AGENT LIGHTNING URL</div>
+            <input class="inp" id="al-backend-url" type="text" value="http://localhost:8000" placeholder="http://localhost:8000" style="font-size:10px;width:100%">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="btn prim" onclick="connectSupabaseDirect()" style="flex:1;font-size:9px">🔗 CONECTAR SUPERVISOR</button>
+            <button class="btn" onclick="sbPushAll()" style="flex:1;font-size:9px;border-color:var(--green);color:var(--green)">⬆️ SINCRONIZAR</button>
+            <button class="btn" onclick="supLoadHistory()" style="flex:1;font-size:9px;border-color:#a855f7;color:#a855f7">📋 HISTÓRICO</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:6px">
+            <div style="background:var(--bg3);border:1px solid rgba(255,140,0,0.3);padding:5px;text-align:center;border-radius:2px"><div id="al-rollout-count" style="font-family:var(--hud);font-size:13px;color:var(--orange)">0</div><div style="font-size:7px;color:var(--t3);letter-spacing:1px">ROLLOUTS</div></div>
+            <div style="background:var(--bg3);border:1px solid rgba(0,255,136,0.3);padding:5px;text-align:center;border-radius:2px"><div id="al-avg-reward" style="font-family:var(--hud);font-size:13px;color:var(--green)">—</div><div style="font-size:7px;color:var(--t3);letter-spacing:1px">AVG REWARD</div></div>
+            <div style="background:var(--bg3);border:1px solid rgba(10,240,255,0.3);padding:5px;text-align:center;border-radius:2px"><div id="al-otlp-status" style="font-family:var(--hud);font-size:10px;color:var(--t3)">OFFLINE</div><div style="font-size:7px;color:var(--t3);letter-spacing:1px">OTLP CHANNEL</div></div>
+          </div>
+          <div id="sb-status-feedback" style="font-size:9px;color:var(--yellow);text-align:center">Aguardando credenciais...</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:1px;background:var(--b1);flex:1;overflow:hidden;min-height:0">
+          <div style="background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+            <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7">📊 MÉTRICAS DO SISTEMA</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+              <div class="sup-metric-box"><span class="sup-mbl">WIN RATE</span><span class="sup-mbv" id="sup-wr">—</span></div>
+              <div class="sup-metric-box"><span class="sup-mbl">PROF. FACTOR</span><span class="sup-mbv" id="sup-pf">—</span></div>
+              <div class="sup-metric-box"><span class="sup-mbl">TRADES</span><span class="sup-mbv" id="sup-total">—</span></div>
+              <div class="sup-metric-box"><span class="sup-mbl">NET P&L</span><span class="sup-mbv" id="sup-pnl">—</span></div>
+              <div class="sup-metric-box"><span class="sup-mbl">MAX DD</span><span class="sup-mbv" id="sup-dd">—</span></div>
+              <div class="sup-metric-box"><span class="sup-mbl">MLP ACC</span><span class="sup-mbv" id="sup-mlp">—</span></div>
+            </div>
+            <div>
+              <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7;margin-bottom:6px">🎯 SENTINEL DE DRIFT</div>
+              <div id="sup-drift" style="font-size:8px;color:var(--t3);padding:6px;background:var(--bg2);border:1px solid rgba(168,85,247,0.2);border-radius:3px;line-height:1.6">Conecte o backend para análise de drift</div>
+            </div>
+            <button class="btn sm" onclick="supRequestStats()" style="border-color:#a855f7;color:#a855f7;font-size:8px;margin-top:auto">🔄 ATUALIZAR MÉTRICAS</button>
+          </div>
+          <div style="background:var(--panel);padding:12px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-shrink:0">
+              <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7">🧠 ESTRATÉGIAS (OpenAI GPT)</div>
+              <button class="btn sm" onclick="supGetStrategies()" style="margin-left:auto;border-color:#a855f7;color:#a855f7;font-size:7px">⚡ GERAR</button>
+            </div>
+            <div id="sup-strategies" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px"><div style="font-size:8px;color:var(--t3);text-align:center;padding:20px">Clique GERAR para solicitar estratégias ao GPT</div></div>
+          </div>
+          <div style="background:var(--panel);padding:12px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-shrink:0">
+              <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7">🔎 PADRÕES EM LOSSES</div>
+              <button class="btn sm" onclick="supMinePatterns()" style="margin-left:auto;border-color:#ff6b6b;color:#ff6b6b;font-size:7px">⛏ MINERAR</button>
+            </div>
+            <div id="sup-patterns" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px"><div style="font-size:8px;color:var(--t3);text-align:center;padding:20px">Clique MINERAR para analisar padrões de erro</div></div>
+          </div>
+          <div style="background:var(--panel);padding:12px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#ffd60a;margin-bottom:8px;flex-shrink:0">⚡ OTIMIZAÇÃO RL — AGENT LIGHTNING</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;flex-shrink:0">
+              <button class="btn sm" onclick="supRunRL()" style="flex:1;border-color:#ffd60a;color:#ffd60a;font-size:8px">▶ INICIAR RL</button>
+              <span id="sup-rl-ep" style="font-size:8px;color:var(--t3);align-self:center;white-space:nowrap">Ep: 0/100</span>
+            </div>
+            <div style="height:4px;background:var(--bg2);border-radius:2px;margin-bottom:8px;overflow:hidden;flex-shrink:0"><div id="sup-rl-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ffd60a,#ff8c00);transition:width .3s"></div></div>
+            <div id="sup-rl-log" style="flex:1;overflow-y:auto;font-size:7px;color:var(--t2);font-family:var(--mono);background:var(--bg2);padding:6px;border:1px solid rgba(255,214,10,0.15);border-radius:2px;line-height:1.5">Aguardando execução...</div>
+            <div style="margin-top:8px;flex-shrink:0">
+              <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7;margin-bottom:4px">🏆 MELHORES PARÂMETROS</div>
+              <div id="sup-best-params" style="font-size:7.5px;color:var(--green);background:var(--bg2);padding:6px;border:1px solid rgba(0,255,136,0.15);font-family:var(--mono);border-radius:2px">—</div>
+              <button class="btn sm" onclick="supApplyBest()" id="sup-apply-btn" style="margin-top:6px;border-color:#00ff88;color:#00ff88;font-size:8px;display:none;width:100%">✓ VALIDAR E APLICAR AO SISTEMA</button>
+            </div>
+          </div>
+          <div style="background:var(--panel);padding:12px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0">
+              <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7">📋 HISTÓRICO DE OTIMIZAÇÕES</div>
+              <button class="btn sm" onclick="supRollback()" style="margin-left:auto;border-color:#ff6b6b;color:#ff6b6b;font-size:7px">↩ ROLLBACK</button>
+            </div>
+            <div id="sup-history" style="flex:1;overflow-y:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:7.5px">
+                <thead><tr style="color:var(--t3);border-bottom:1px solid var(--b1)"><th style="text-align:left;padding:3px 4px">DATA</th><th style="text-align:left;padding:3px 4px">TIPO</th><th style="text-align:right;padding:3px 4px">REWARD</th><th style="text-align:right;padding:3px 4px">STATUS</th></tr></thead>
+                <tbody id="sup-history-body"><tr><td colspan="4" style="color:var(--t3);text-align:center;padding:12px;font-size:7px">Sem registros ainda</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div style="background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+            <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#ffd60a;flex-shrink:0">📡 SENTIMENTO DE MERCADO</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+              <div style="flex:1;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden"><div id="sup-sent-bar" style="height:100%;width:50%;background:linear-gradient(90deg,#ff2d55,#ffd60a,#00ff88);transition:width .5s"></div></div>
+              <span id="sup-sent-score" style="font-size:9px;color:#ffd60a;font-family:var(--mono);min-width:32px;text-align:right">—</span>
+            </div>
+            <div id="sup-sent-label" style="font-size:7px;color:var(--t3);flex-shrink:0">NEUTRO ⚪</div>
+            <div id="sup-sent-summary" style="font-size:7.5px;color:var(--t2);padding:5px;background:var(--bg2);border:1px solid rgba(255,214,10,0.15);border-radius:2px;flex-shrink:0">Análise indisponível</div>
+            <div style="display:flex;gap:5px;flex-shrink:0">
+              <input class="inp" id="sup-news-input" placeholder="Cole headlines separadas por ;" style="flex:1;font-size:8px">
+              <button class="btn sm" onclick="supAnalyzeSentiment()" style="border-color:#ffd60a;color:#ffd60a;font-size:7px">📡 ANALISAR</button>
+            </div>
+            <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:#a855f7;flex-shrink:0">📝 RELATÓRIO DIÁRIO (IA)</div>
+            <div id="sup-insight" style="flex:1;overflow-y:auto;font-size:7.5px;color:var(--t2);line-height:1.6;padding:6px;background:var(--bg2);border:1px solid rgba(168,85,247,0.15);border-radius:2px">Conecte o backend e clique em GERAR RELATÓRIO para análise diária.</div>
+            <div style="display:flex;gap:5px;flex-shrink:0">
+              <button class="btn sm" onclick="supGetReport()" style="flex:1;border-color:#a855f7;color:#a855f7;font-size:8px">📊 GERAR RELATÓRIO</button>
+              <button class="btn sm" onclick="supRequestStats()" style="flex:1;border-color:var(--cyan);color:var(--cyan);font-size:8px">🔄 UPDATE</button>
+            </div>
+            <div style="font-size:6.5px;color:var(--t3);text-align:center;flex-shrink:0">Supervisor IA v1.0 · Backend: <span id="sup-backend-status" style="color:#a855f7">OFFLINE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: CLOUD V23 -->
+      <div class="page" id="pcloud">
+        <div style="display:flex;height:100%;overflow:hidden">
+          <div style="width:280px;flex-shrink:0;border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto">
+            <div style="padding:12px 13px;border-bottom:1px solid var(--b1)">
+              <div class="sb-hdr">☁️ ABLY — CONEXÃO</div>
+              <div class="irow"><div class="lbl">API KEY <a href="https://ably.com/accounts/any/apps" target="_blank">↗ Obter</a></div><input class="inp" id="cloud-ably-key" type="password" placeholder="xVLyHw.XXXXXX:YYYYYYYY"/></div>
+              <div class="irow"><div class="lbl">CHANNEL</div><input class="inp" id="cloud-channel" value="assetana-signals"/></div>
+              <div class="irow"><div class="lbl">AUTO-TRADE (sinais cloud)</div>
+                <select class="inp" id="cloud-autotrade">
+                  <option value="off">OFF — apenas visualizar</option>
+                  <option value="high">HIGH — confiança &gt; 80%</option>
+                  <option value="med">MEDIUM — confiança &gt; 65%</option>
+                  <option value="any">ANY — todos os sinais</option>
+                </select>
+              </div>
+              <div class="irow"><div class="lbl">BROADCAST SINAIS LOCAIS</div>
+                <select class="inp" id="cloud-broadcast">
+                  <option value="on" selected>ON — publicar no canal</option>
+                  <option value="off">OFF — apenas receber</option>
+                </select>
+              </div>
+              <div class="g2" style="margin-top:8px">
+                <button class="btn prim" onclick="cloudConnect()">⚡ CONECTAR</button>
+                <button class="btn dang" onclick="cloudDisconnect()">✕ SAIR</button>
+              </div>
+              <div style="margin-top:8px;background:var(--bg3);border:1px solid var(--b1);padding:8px 9px;font-size:7.5px;line-height:2.1">
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">ABLY</span><span id="cloud-status-ably" style="font-family:var(--mono);color:var(--t3)">OFFLINE</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">CANAL</span><span id="cloud-status-ch" style="font-family:var(--mono);color:var(--t3)">—</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">SINAIS RX</span><span id="cloud-rx-count" style="font-family:var(--mono);color:var(--green)">0</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">SINAIS TX</span><span id="cloud-tx-count" style="font-family:var(--mono);color:var(--blue)">0</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">AGENT</span><span id="cloud-agent-status" style="font-family:var(--mono);color:var(--t3)">IDLE</span></div>
+              </div>
+            </div>
+            <div style="padding:12px 13px;border-bottom:1px solid var(--b1)">
+              <div class="sb-hdr">📡 ÚLTIMO SINAL CLOUD</div>
+              <div id="cloud-last-signal" style="background:var(--bg3);border:1px solid rgba(10,240,255,0.2);padding:10px;font-size:7.5px;min-height:90px;font-family:var(--mono);color:var(--t3);line-height:1.9">Aguardando sinal da nuvem...</div>
+            </div>
+            <div style="padding:12px 13px">
+              <div class="sb-hdr">🔧 PUBLICAR SINAL MANUAL</div>
+              <div class="g2" style="margin-bottom:6px">
+                <button class="btn" style="border-color:var(--green);color:var(--green)" onclick="cloudPublishSignal('CALL')">▲ PUB CALL</button>
+                <button class="btn" style="border-color:var(--red);color:var(--red)" onclick="cloudPublishSignal('PUT')">▼ PUB PUT</button>
+              </div>
+              <button class="btn info" style="font-size:8px" onclick="cloudPublishCurrentSignal()">📤 PUBLICAR SINAL ATUAL</button>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--b1);background:var(--bg2);display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span style="font-size:8px;color:var(--t2);letter-spacing:1px">☁️ CLOUD SIGNAL FEED — AGENT-LIGHTNING REAL-TIME</span>
+              <div id="cloud-feed-led" class="led led-off" style="margin-left:auto"></div>
+              <span id="cloud-feed-status" style="font-size:7.5px;color:var(--t3)">OFFLINE</span>
+              <button class="btn sm" onclick="cloudClearFeed()" style="font-size:7px;padding:3px 8px;border-color:var(--t3);color:var(--t3)">🗑 LIMPAR</button>
+            </div>
+            <div id="cloud-insight" style="padding:10px 16px;background:rgba(10,240,255,0.05);border-bottom:2px solid rgba(10,240,255,0.18);font-size:8px;color:var(--blue);line-height:1.8;flex-shrink:0">
+              <b>☁️ AGENT-LIGHTNING:</b> Conecte o Ably para receber análise da nuvem em tempo real...
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:10px 14px" id="cloud-feed-list">
+              <div style="font-size:8px;color:var(--t3);text-align:center;padding:30px">Nenhum sinal cloud recebido ainda</div>
+            </div>
+            <div style="padding:10px 14px;border-top:1px solid var(--b1);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex-shrink:0">
+              <div style="background:var(--bg3);border:1px solid var(--b1);padding:8px;text-align:center"><div id="cloud-stat-calls" style="font-family:var(--hud);font-size:16px;color:var(--green)">0</div><div style="font-size:6px;color:var(--t3);letter-spacing:1px;margin-top:2px">CALLS RX</div></div>
+              <div style="background:var(--bg3);border:1px solid var(--b1);padding:8px;text-align:center"><div id="cloud-stat-puts" style="font-family:var(--hud);font-size:16px;color:var(--red)">0</div><div style="font-size:6px;color:var(--t3);letter-spacing:1px;margin-top:2px">PUTS RX</div></div>
+              <div style="background:var(--bg3);border:1px solid var(--b1);padding:8px;text-align:center"><div id="cloud-stat-exec" style="font-family:var(--hud);font-size:16px;color:var(--yellow)">0</div><div style="font-size:6px;color:var(--t3);letter-spacing:1px;margin-top:2px">EXECUTADOS</div></div>
+              <div style="background:var(--bg3);border:1px solid var(--b1);padding:8px;text-align:center"><div id="cloud-stat-conf" style="font-family:var(--hud);font-size:16px;color:var(--blue)">—</div><div style="font-size:6px;color:var(--t3);letter-spacing:1px;margin-top:2px">CONF MÉDIA</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <div id="statusbar">
+    <div class="sbi"><span class="sbi-k">TD</span><span class="sbi-v" id="sb-td">OFF</span></div>
+    <div class="sbi"><span class="sbi-k">SYM</span><span class="sbi-v" id="sb-sym">--</span></div>
+    <div class="sbi"><span class="sbi-k">BID</span><span class="sbi-v" id="sb-bid">--</span></div>
+    <div class="sbi"><span class="sbi-k">REGIME</span><span class="sbi-v" id="sb-reg">--</span></div>
+    <div class="sbi"><span class="sbi-k">MTF</span><span class="sbi-v" id="sb-mtf">--</span></div>
+    <div class="sbi"><span class="sbi-k">SINAL</span><span class="sbi-v" id="sb-sig">--</span></div>
+    <div class="sbi"><span class="sbi-k">SENT</span><span class="sbi-v" id="sb-sent">--</span></div>
+    <div class="sbi"><span class="sbi-k">DERIV</span><span class="sbi-v" id="sb-dv">OFF</span></div>
+    <div class="sbi"><span class="sbi-k">SALDO</span><span class="sbi-v ok" id="sb-bal">--</span></div>
+    <div class="sbi" style="margin-left:auto"><span class="sbi-k">V23</span><span class="sbi-v" style="color:var(--blue)">CLOUD·IA</span></div>
+  </div>
+
+  <!-- PREDICTOR PAGE -->
+  <div class="page" id="pml" style="display:none;flex-direction:column">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--b1);background:var(--bg2);display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <span style="font-size:8px;color:var(--t2);letter-spacing:1px">🤖 LIGHT PREDICTOR V1 — LOGISTIC REGRESSION ONLINE</span>
+      <span id="lp-status-badge" style="margin-left:auto;font-size:8px;color:var(--t3);background:var(--b1);border:1px solid var(--b2);padding:2px 8px;border-radius:2px">INATIVO</span>
+    </div>
+    <div style="display:flex;height:calc(100% - 36px);overflow:hidden">
+      <div style="width:220px;flex-shrink:0;border-right:1px solid var(--b1);display:flex;flex-direction:column;gap:0;overflow-y:auto">
+        <div style="padding:10px 12px;border-bottom:1px solid var(--b1)">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">STATUS DO MODELO</div>
+          <div class="g2">
+            <div class="metric-box"><span class="mbl">AMOSTRAS</span><span class="mbv" id="lp-n">0</span></div>
+            <div class="metric-box"><span class="mbl">ACURÁCIA</span><span class="mbv" id="lp-acc">—</span></div>
+            <div class="metric-box"><span class="mbl">MIN N</span><span class="mbv" id="lp-min-n">25</span></div>
+            <div class="metric-box"><span class="mbl">MODO IA</span><span class="mbv" id="lp-mode-display">—</span></div>
+            <div class="metric-box"><span class="mbl">EPOCH</span><span class="mbv" id="lp-epoch">0</span></div>
+            <div class="metric-box"><span class="mbl">LOSS</span><span class="mbv" id="lp-loss">—</span></div>
+          </div>
+          <div style="margin-top:10px;background:var(--b1);border-radius:3px;padding:8px">
+            <div style="font-size:7px;color:var(--t2);margin-bottom:6px;letter-spacing:1px">ÚLTIMA PREDIÇÃO</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:8px;color:var(--t2)">P(CALL)</span><span id="lp-pcall" style="font-family:var(--hud);font-size:10px;color:var(--green)">—</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:8px;color:var(--t2)">P(PUT)</span><span id="lp-pput" style="font-family:var(--hud);font-size:10px;color:var(--red)">—</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font-size:8px;color:var(--t2)">CONFIANÇA</span><span id="lp-conf" style="font-family:var(--hud);font-size:10px;color:var(--yellow)">—</span></div>
+            <div style="margin-top:8px;position:relative;height:6px;background:var(--b2);border-radius:3px;overflow:hidden">
+              <div id="lp-bar-call" style="position:absolute;left:0;top:0;height:100%;background:var(--green);transition:width .4s"></div>
+              <div id="lp-bar-put" style="position:absolute;right:0;top:0;height:100%;background:var(--red);transition:width .4s"></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--b1)">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">CONTROLE</div>
+          <button id="lp-toggle" class="btn" onclick="lpToggle()" style="width:100%;margin-bottom:6px;font-size:8px">▶ ATIVAR MODELO</button>
+          <div style="font-size:7px;color:var(--t2);margin-bottom:5px">MODO DE OPERAÇÃO</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn sm lp-mode" data-mode="hybrid" onclick="lpSetMode('hybrid')" style="flex:1;font-size:7px;border-color:var(--cyan);color:var(--cyan)">HYBRID</button>
+            <button class="btn sm lp-mode" data-mode="boost" onclick="lpSetMode('boost')" style="flex:1;font-size:7px">BOOST</button>
+            <button class="btn sm lp-mode" data-mode="replace" onclick="lpSetMode('replace')" style="flex:1;font-size:7px">REPLACE</button>
+          </div>
+          <div id="lp-mode-desc" style="font-size:7px;color:var(--t3);margin-top:5px;line-height:1.6">HYBRID: 55% ensemble + 45% LP</div>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--b1)">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">TREINAMENTO</div>
+          <button id="lp-bt-btn" class="btn prim sm" onclick="lpTrainBacktest()" style="width:100%;margin-bottom:5px;font-size:8px">📈 TREINAR COM BACKTEST</button>
+          <button id="lp-mem-btn" class="btn sm" onclick="lpTrainMemory()" style="width:100%;margin-bottom:5px;font-size:8px">💾 TREINAR COM HISTÓRICO</button>
+          <div id="lp-prog" style="font-size:7px;color:var(--t3);text-align:center;min-height:12px"></div>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--b1)">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">HIPERPARÂMETROS</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+            <div><div style="font-size:7px;color:var(--t2);margin-bottom:2px">LEARN RATE</div><input id="lp-lr" type="number" class="inp" value="0.05" min="0.001" max="0.5" step="0.005" style="width:100%;font-size:9px" oninput="lpUpdateHyper()"></div>
+            <div><div style="font-size:7px;color:var(--t2);margin-bottom:2px">L2 λ</div><input id="lp-lambda" type="number" class="inp" value="0.001" min="0" max="0.1" step="0.0005" style="width:100%;font-size:9px" oninput="lpUpdateHyper()"></div>
+            <div><div style="font-size:7px;color:var(--t2);margin-bottom:2px">MOMENTUM</div><input id="lp-mom" type="number" class="inp" value="0.85" min="0" max="0.99" step="0.05" style="width:100%;font-size:9px" oninput="lpUpdateHyper()"></div>
+            <div><div style="font-size:7px;color:var(--t2);margin-bottom:2px">MIN SAMPLES</div><input id="lp-minn" type="number" class="inp" value="25" min="5" max="200" step="5" style="width:100%;font-size:9px" oninput="lpUpdateHyper()"></div>
+          </div>
+          <button class="btn sm" onclick="lpReset()" style="width:100%;margin-top:8px;font-size:7px;color:var(--red);border-color:var(--red)">⚠ RESETAR PESOS</button>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--b1);display:flex;gap:14px;align-items:flex-start;flex-shrink:0">
+          <div style="flex:1"><div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:6px">CURVA DE LOSS</div><div id="lp-loss-chart" style="height:60px;background:var(--b1);border-radius:3px;overflow:hidden;display:flex;align-items:center;justify-content:center"><span style="font-size:7px;color:var(--t3)">aguardando treino...</span></div></div>
+          <div style="width:140px"><div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:6px">PESO MÉDIO ± DP</div><div id="lp-weight-dist" style="height:60px;background:var(--b1);border-radius:3px;overflow:hidden;display:flex;align-items:center;justify-content:center"><span style="font-size:7px;color:var(--t3)">—</span></div></div>
+          <div style="width:120px"><div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:6px">ACURÁCIA TREND</div><div id="lp-acc-chart" style="height:60px;background:var(--b1);border-radius:3px;overflow:hidden;display:flex;align-items:center;justify-content:center"><span style="font-size:7px;color:var(--t3)">—</span></div></div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:10px 14px">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">IMPORTÂNCIA DAS FEATURES</div>
+          <div id="lp-fi" style="display:flex;flex-direction:column;gap:4px"><div style="font-size:7px;color:var(--t3)">Treine o modelo para ver a importância das features</div></div>
+        </div>
+        <div style="padding:10px 14px;border-top:1px solid var(--b1);flex-shrink:0">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">⚡ CONFIANÇA POR INDICADOR (tempo real)</div>
+          <div id="pred-indicator-weights" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px"><div style="font-size:7px;color:var(--t3)">Aguardando dados...</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div style="font-size:7px;color:var(--t3)">CONVERGÊNCIA IA+TÉCNICO:</div>
+            <div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;min-width:60px"><div id="pred-convergence-bar" style="height:100%;width:0%;background:var(--green);transition:width .4s"></div></div>
+            <span id="pred-convergence-pct" style="font-family:var(--hud);font-size:10px;color:var(--green);min-width:32px">—</span>
+          </div>
+          <div style="margin-top:5px;font-size:7px;color:var(--t3)" id="pred-live-status">—</div>
+        </div>
+        <div style="padding:10px 14px;border-top:1px solid var(--b1);flex-shrink:0">
+          <div style="font-family:var(--hud);font-size:7px;letter-spacing:2px;color:var(--t2);margin-bottom:6px">ÚLTIMAS 8 PREDIÇÕES</div>
+          <div id="lp-pred-hist" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /app -->
+
+  <div id="toasts"></div>
+  <div class="modal-bg" id="modal-trade">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('modal-trade').classList.remove('on')">✕</button>
+      <div class="modal-title" id="mt-t">RESULTADO</div>
+      <div class="modal-body" id="mt-b"></div>
+      <button class="btn prim" onclick="document.getElementById('modal-trade').classList.remove('on')">OK</button>
+    </div>
+  </div>
+
+  <!-- ═══ JAVASCRIPT ENGINE ═══ -->
+  <!-- O JavaScript completo do ASSETANA V23 (engine de trading, indicadores,
+       Deriv WebSocket, TwelveData, Brain V21, Light Predictor, Supervisor IA,
+       Cloud V23 e Agent Lightning) está em js/engine.js separado.
+       Se você está a ver esta mensagem, configure o script abaixo
+       ou concatene o JS diretamente neste ficheiro. -->
+  <script>
+    // ── PLACEHOLDER: engine will be loaded from the original source ──────
+    // This HTML shell contains the full UI. The JavaScript engine (thousands
+    // of lines) from the original ASSETANA_V23_perf.html must be appended here.
+    //
+    // Quick setup: copy all <script> content from ASSETANA_V23_perf.html
+    // and paste it here between these script tags, OR run the build step:
+    //   python3 build.py   (merges HTML shell + JS engine into index.html)
+    //
+    // The vercel.json and README.md are already configured for deployment.
+    // ─────────────────────────────────────────────────────────────────────
+    console.warn('[ASSETANA] JS engine not loaded. See comment above for instructions.');
+    document.addEventListener('DOMContentLoaded', () => {
+      const msg = document.createElement('div');
+      msg.style.cssText = 'position:fixed;inset:0;background:#020b14;color:#00ff88;font-family:Share Tech Mono,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:99999;padding:20px;text-align:center';
+      msg.innerHTML = '<div style="font-size:28px;font-weight:900;letter-spacing:4px;background:linear-gradient(135deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">ASSETANA V23</div>'
+        + '<div style="font-size:13px;color:rgba(255,255,255,0.6);max-width:480px;line-height:1.8">Para ativar o engine de trading, copie o conteúdo JavaScript do ficheiro original <b style="color:#00ff88">ASSETANA_V23_perf.html</b> e cole aqui dentro da tag &lt;script&gt;.</div>'
+        + '<div style="font-size:11px;color:rgba(255,255,255,0.35)">vercel.json e README.md já estão configurados ✓</div>';
+      document.body.appendChild(msg);
+    });
+  </script>
+
+</body>
+</html>
